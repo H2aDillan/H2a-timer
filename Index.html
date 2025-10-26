@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Earnings Timer — Confirm Delete + Auto Reset</title>
+<style>
+  body{font-family:Arial, sans-serif;background:#0f172a;color:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
+  .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px}
+  label{font-size:16px;font-weight:bold}
+  .rate-wrap{display:flex;align-items:center;gap:8px;background:#374151;border:1px solid #4b5563;border-radius:8px;padding:6px 8px}
+  input[type="number"]{width:110px;padding:6px 6px;border:none;outline:none;font-size:16px;text-align:right;background:transparent;color:#f8fafc}
+
+  .timer{font-size:3rem;margin-bottom:10px}
+  .amount{font-size:3rem;color:#22c55e;margin-bottom:20px}
+
+  .buttons{display:flex;gap:10px}
+  button{background:#2563eb;border:none;color:#fff;padding:12px 24px;border-radius:10px;font-size:16px;cursor:pointer}
+  #stop{background:#dc2626}
+  #clear{background:#6b7280}
+
+  #historyBtn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s}
+  #historyBtn:hover{background:#334155}
+  #historyBtn.flash{background:#22c55e !important;box-shadow:0 0 0 6px rgba(34,197,94,.25)}
+  .book{width:18px;height:18px;fill:#8b5a2b}
+
+  #historyPanel{position:fixed;bottom:-75%;left:0;width:100%;max-height:75%;background:#1e293b;color:#f8fafc;border-top:2px solid #334155;border-radius:12px 12px 0 0;padding:0;transition:bottom .3s;display:flex;flex-direction:column}
+  #historyPanel.show{bottom:0}
+  #historyHeader{background:#0f172a;padding:12px 16px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #334155}
+  #historyHeader .title{display:inline-flex;align-items:center;gap:8px}
+  #historyHeader h3{margin:0;font-size:18px}
+  #closeHistory{background:#dc2626;border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}
+
+  #totals{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px;border-bottom:1px solid #334155}
+  .card{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px}
+  .card .k{font-size:12px;color:#94a3b8}
+  .card .v{font-size:18px;font-weight:800;color:#22c55e}
+
+  #historyList{list-style:none;padding:12px 16px;margin:0;overflow-y:auto;flex-grow:1}
+  #historyList li{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+  .meta{font-size:13px;color:#94a3b8;margin-bottom:6px}
+  .dur{font-size:15px;font-weight:bold}
+  .amt{color:#22c55e;font-weight:bold;font-size:16px}
+  .tag{display:inline-block;margin-top:6px;font-size:12px;color:#eab308;background:#3b3a1b;border:1px solid #534f1a;padding:2px 6px;border-radius:999px}
+  .row-actions{display:flex;flex-direction:column;gap:6px}
+  .btn-small{background:#334155;border:1px solid #465368;color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}
+  .btn-danger{background:#7f1d1d;border-color:#b91c1c}
+
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
+  .modal{background:#1e293b;border-radius:12px;padding:16px;width:300px}
+  .modal h3{margin:0 0 10px;text-align:center}
+  .field{display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-top:8px}
+  .field input{flex:1;background:transparent;border:none;outline:none;color:#f8fafc}
+  .actions{display:flex;gap:10px;margin-top:14px}
+  .actions button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
+  #discardBtn{background:#6b7280}
+  #saveBtn{background:#22c55e}
+
+  #editBackdrop .field label{font-size:12px;color:#94a3b8;width:80px}
+  input[type="datetime-local"]{background:transparent;border:none;outline:none;color:#f8fafc}
+  #editCancel{background:#6b7280}
+  #editSave{background:#22c55e}
+
+  /* Confirm delete modal */
+  #confirmYes{background:#dc2626}
+  #confirmNo{background:#6b7280}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <span>Amount ($/hr):</span>
+  <div class="rate-wrap">
+    <input id="rate" type="number" value="25" step="0.01" min="0">
+  </div>
+</div>
+
+<div class="timer" id="timeDisplay">00:00.00</div>
+<div class="amount" id="moneyDisplay">$0.00</div>
+
+<div class="buttons">
+  <button id="start">Start</button>
+  <button id="stop">Stop</button>
+  <button id="clear">Clear</button>
+</div>
+
+<button id="historyBtn" aria-live="polite">
+  <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
+  </svg>
+  History
+</button>
+
+<div id="historyPanel" aria-hidden="true">
+  <div id="historyHeader">
+    <div class="title">
+      <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
+      </svg>
+      <h3>History</h3>
+    </div>
+    <button id="closeHistory">Close</button>
+  </div>
+
+  <div id="totals">
+    <div class="card"><div class="k">This week</div><div class="v" id="weekTotal">$0.00</div></div>
+    <div class="card"><div class="k">This month</div><div class="v" id="monthTotal">$0.00</div></div>
+  </div>
+
+  <ul id="historyList"></ul>
+</div>
+
+<!-- Save Popup -->
+<div id="saveBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+  <div class="modal">
+    <h3 id="saveTitle">Save this session?</h3>
+    <div class="field">
+      <span style="font-size:14px;color:#94a3b8;">Tag</span>
+      <input id="tagInput" type="text" placeholder="Optional tag">
+    </div>
+    <div class="actions">
+      <button id="discardBtn">No</button>
+      <button id="saveBtn">Yes, Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Popup -->
+<div id="editBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="modal">
+    <h3 id="editTitle">Edit entry</h3>
+    <div class="field"><label>Start</label><input id="editStart" type="datetime-local"></div>
+    <div class="field"><label>End</label><input id="editEnd" type="datetime-local"></div>
+    <div class="field">
+      <span style="font-size:14px;color:#94a3b8;">Tag</span>
+      <input id="editTag" type="text" placeholder="Edit tag">
+    </div>
+    <div class="actions">
+      <button id="editCancel">Cancel</button>
+      <button id="editSave">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Popup -->
+<div id="confirmBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="modal">
+    <h3 id="confirmTitle">Delete this entry?</h3>
+    <div class="actions">
+      <button id="confirmNo">No</button>
+      <button id="confirmYes">Yes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====== State ======
+  let startTime = 0, elapsed = 0, running = false, interval = null;
+  let startWallTs = null, endWallTs = null;
+  // entries: { id, startTs, endTs, elapsedMs, amount, tag? }
+  let history = [];
+  let editingId = null;
+  let pendingDeleteId = null;
+
+  // ====== Elements ======
+  const timeDisplay = document.getElementById('timeDisplay');
+  const moneyDisplay = document.getElementById('moneyDisplay');
+  const rateInput = document.getElementById('rate');
+  const startBtn = document.getElementById('start');
+  const stopBtn = document.getElementById('stop');
+  const clearBtn = document.getElementById('clear');
+
+  const historyBtn = document.getElementById('historyBtn');
+  const historyPanel = document.getElementById('historyPanel');
+  const closeHistory = document.getElementById('closeHistory');
+  const historyList = document.getElementById('historyList');
+  const weekTotalEl = document.getElementById('weekTotal');
+  const monthTotalEl = document.getElementById('monthTotal');
+
+  const saveBackdrop = document.getElementById('saveBackdrop');
+  const discardBtn = document.getElementById('discardBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const tagInput = document.getElementById('tagInput');
+
+  const editBackdrop = document.getElementById('editBackdrop');
+  const editStart = document.getElementById('editStart');
+  const editEnd = document.getElementById('editEnd');
+  const editTag = document.getElementById('editTag');
+  const editCancel = document.getElementById('editCancel');
+  const editSave = document.getElementById('editSave');
+
+  const confirmBackdrop = document.getElementById('confirmBackdrop');
+  const confirmYes = document.getElementById('confirmYes');
+  const confirmNo = document.getElementById('confirmNo');
+
+  // ====== Helpers ======
+  function vibrate(ms=20){ if (navigator.vibrate) try{ navigator.vibrate(ms); }catch{} }
+  function fmtMoney(n){ return `$${n.toFixed(2)}`; }
+  function formatTime(ms){
+    const totalSeconds = ms/1000;
+    const minutes = Math.floor(totalSeconds/60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2,'0')}:${seconds.toFixed(2).padStart(5,'0')}`;
+  }
+  function toLocalInput(ts){
+    const d = new Date(ts); const pad=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function fromLocalInput(val){ return new Date(val.replace(' ', 'T')).getTime(); }
+
+  function update(){
+    const now = Date.now();
+    elapsed = now - startTime;
+    endWallTs = now;
+    const rate = parseFloat(rateInput.value)||0;
+    const earned = (rate * (elapsed / 3600000));
+    timeDisplay.textContent = formatTime(elapsed);
+    moneyDisplay.textContent = fmtMoney(earned);
+  }
+
+  function startTimer(){
+    if (running) return;
+    running = true;
+    const now = Date.now();
+    if (!startWallTs) startWallTs = now;
+    startTime = now - elapsed;
+    interval = setInterval(update, 10);
+    vibrate(12);
+  }
+
+  function stopTimer(){
+    if (!running) return;
+    running = false;
+    clearInterval(interval);
+    endWallTs = Date.now();
+    saveBackdrop.style.display = "flex";
+    vibrate(16);
+  }
+
+  function clearTimer(){
+    if (running){ running=false; clearInterval(interval); }
+    elapsed = 0; startWallTs = null; endWallTs = null;
+    timeDisplay.textContent = "00:00.00";
+    moneyDisplay.textContent = "$0.00";
+    vibrate(10);
+  }
+
+  function flashHistoryBtn(){
+    historyBtn.classList.add('flash');
+    setTimeout(()=>historyBtn.classList.remove('flash'), 1000);
+  }
+
+  function startOfWeek(ts){ const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x.getTime(); }
+  function startOfMonth(ts){ const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), 1); x.setHours(0,0,0,0); return x.getTime(); }
+  function updateTotals(){
+    const now = Date.now(), w0=startOfWeek(now), m0=startOfMonth(now);
+    const weekSum = history.filter(h=>h.endTs>=w0).reduce((a,b)=>a+(b.amount||0),0);
+    const monthSum = history.filter(h=>h.endTs>=m0).reduce((a,b)=>a+(b.amount||0),0);
+    weekTotalEl.textContent = fmtMoney(weekSum);
+    monthTotalEl.textContent = fmtMoney(monthSum);
+  }
+
+  function renderHistory(){
+    historyList.innerHTML = "";
+    history.forEach(item=>{
+      const startStr = new Date(item.startTs).toLocaleString();
+      const endStr = new Date(item.endTs).toLocaleString();
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <div>
+          <div class="meta">Start: ${startStr} • End: ${endStr}${item.tag ? ` • #${item.tag}` : ''}</div>
+          <div class="dur">Duration: ${formatTime(item.elapsedMs)}</div>
+          <div class="amt">${fmtMoney(item.amount)}</div>
+          ${item.tag ? `<div class="tag">#${item.tag}</div>` : ''}
+        </div>
+        <div class="row-actions">
+          <button class="btn-small btn-danger" data-del="${item.id}">Delete</button>
+          <button class="btn-small" data-edit="${item.id}">Edit</button>
+        </div>
+      `;
+      historyList.appendChild(li);
+    });
+
+    // delete confirmation
+    historyList.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.onclick = ()=>{
+        pendingDeleteId = btn.getAttribute('data-del');
+        confirmBackdrop.style.display = "flex";
+      };
+    });
+
+    // edit
+    historyList.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.getAttribute('data-edit');
+        const entry = history.find(h=>String(h.id)===String(id));
+        if (!entry) return;
+        editingId = entry.id;
+        editStart.value = toLocalInput(entry.startTs);
+        editEnd.value = toLocalInput(entry.endTs);
+        editTag.value = entry.tag || '';
+        editBackdrop.style.display = "flex";
+      };
+    });
+  }
+
+  // Save entry (and auto reset timer)
+  function saveHistory(){
+    const rate = parseFloat(rateInput.value)||0;
+    if (!startWallTs) startWallTs = Date.now() - elapsed;
+    if (!endWallTs) endWallTs = Date.now();
+    const durationMs = Math.max(0, endWallTs - startWallTs);
+    if (durationMs > 0){
+      const now = new Date(endWallTs);
+      const entry = {
+        id: now.getTime().toString()+Math.random().toString(36).slice(2,6),
+        startTs: startWallTs,
+        endTs: endWallTs,
+        elapsedMs: durationMs,
+        amount: +(rate * (durationMs/3600000)).toFixed(2),
+        tag: (tagInput.value||'').trim()
+      };
+      history.unshift(entry);
+      tagInput.value = '';
+      renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20);
+    }
+    // close popup and auto-reset timer/display
+    saveBackdrop.style.display = "none";
+    clearTimer(); // <- auto reset after saving
+  }
+
+  function applyEdit(){
+    if (!editingId) return;
+    const entry = history.find(h=>h.id===editingId);
+    if (!entry) return;
+
+    const s = editStart.value, e = editEnd.value;
+    if (!s || !e) { alert('Provide both start and end.'); return; }
+    const startTs = fromLocalInput(s), endTs = fromLocalInput(e);
+    if (!(isFinite(startTs)&&isFinite(endTs)) || endTs < startTs){ alert('End must be after Start.'); return; }
+    const rate = parseFloat(rateInput.value)||0;
+    const dur = endTs - startTs;
+    entry.startTs = startTs; entry.endTs = endTs; entry.elapsedMs = dur;
+    entry.amount = +(rate * (dur/3600000)).toFixed(2);
+    entry.tag = (editTag.value||'').trim();
+
+    editingId = null;
+    editBackdrop.style.display = "none";
+    renderHistory(); updateTotals(); vibrate(15);
+  }
+
+  // ====== Events ======
+  startBtn.onclick = startTimer;
+  stopBtn.onclick = stopTimer;
+  clearBtn.onclick = clearTimer;
+
+  historyBtn.onclick = ()=>{
+    updateTotals();
+    historyPanel.classList.toggle('show');
+    historyPanel.setAttribute('aria-hidden', historyPanel.classList.contains('show')?'false':'true');
+  };
+  closeHistory.onclick = ()=>{
+    historyPanel.classList.remove('show');
+    historyPanel.setAttribute('aria-hidden','true');
+  };
+
+  discardBtn.onclick = ()=>{ saveBackdrop.style.display = "none"; vibrate(8); };
+  saveBtn.onclick = saveHistory;
+
+  editCancel.onclick = ()=>{ editBackdrop.style.display = "none"; editingId=null; };
+  editSave.onclick = applyEdit;
+
+  // confirm delete handlers
+  confirmNo.onclick = ()=>{ confirmBackdrop.style.display = "none"; pendingDeleteId=null; };
+  confirmYes.onclick = ()=>{
+    if (pendingDeleteId){
+      history = history.filter(h=>String(h.id)!==String(pendingDeleteId));
+      renderHistory(); updateTotals(); vibrate(15);
+    }
+    pendingDeleteId = null;
+    confirmBackdrop.style.display = "none";
+  };
+</script>
+</body>
+</html>
