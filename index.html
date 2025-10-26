@@ -5,23 +5,28 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Earnings Timer — Persistent Background & Stop-Only</title>
 
-<!-- Force fresh load: mild extra help on some browsers -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-
-<!-- 🔄 Version pin: change APP_VERSION on each release (e.g., "3", "4", ...) -->
+<!-- 🔄 Force fresh load (loop-safe). Bump APP_VERSION each release. -->
 <script>
-  (function(){
-    const APP_VERSION = "3"; // ⬅️ bump this every update
-    const url = new URL(location.href);
-    const current = url.searchParams.get("v");
-    if (current !== APP_VERSION) {
-      url.searchParams.set("v", APP_VERSION);
-      // Avoid polluting history so back button isn't weird
-      location.replace(url.toString());
+(function(){
+  const APP_VERSION = "4";            // ← change this number each update
+  const KEY = "ver_guard_seen";       // session guard to stop loops
+  try {
+    const url  = new URL(location.href);
+    const curr = url.searchParams.get("v");
+    const seen = sessionStorage.getItem(KEY);
+
+    if (curr !== APP_VERSION) {
+      if (seen !== APP_VERSION) {
+        sessionStorage.setItem(KEY, APP_VERSION);
+        url.searchParams.set("v", APP_VERSION);
+        location.replace(url.toString());
+      }
+      // else: already tried this version in this session — carry on without redirect
     }
-  })();
+  } catch (e) {
+    // If URL/sessionStorage fails for any reason, just continue normally.
+  }
+})();
 </script>
 
 <style>
@@ -237,7 +242,7 @@
     const state = {
       running,
       startWallTs,
-      elapsed,
+      elapsed,       // retained for future pause support
       rate: parseFloat(rateInput.value)||0,
       lastSaved: Date.now()
     };
@@ -254,7 +259,6 @@
       startWallTs = typeof s.startWallTs === 'number' ? s.startWallTs : null;
       elapsed = typeof s.elapsed === 'number' ? s.elapsed : 0;
 
-      // If running, recalc elapsed from wall clock to "catch up"
       if (running && startWallTs){
         const now = Date.now();
         elapsed = Math.max(0, now - startWallTs);
@@ -262,7 +266,6 @@
         update();
         startInterval();
       }else{
-        // Not running: show whatever was stored
         updateDisplays(elapsed);
       }
     }catch(e){}
@@ -298,7 +301,7 @@
 
   function startInterval(){
     if (interval) clearInterval(interval);
-    interval = setInterval(update, 33);
+    interval = setInterval(update, 33); // ~30 FPS
   }
 
   function startTimer(){
@@ -324,6 +327,7 @@
   }
 
   function clearTimer(){
+    // Only stop via Stop button (your rule). Clear refuses while running.
     if (running){
       alert('Stop the timer first to clear the display.');
       vibrate(8);
@@ -372,6 +376,7 @@
       historyList.appendChild(li);
     });
 
+    // delete confirmation
     historyList.querySelectorAll('[data-del]').forEach(btn=>{
       btn.onclick = ()=>{
         pendingDeleteId = btn.getAttribute('data-del');
@@ -379,6 +384,7 @@
       };
     });
 
+    // edit
     historyList.querySelectorAll('[data-edit]').forEach(btn=>{
       btn.onclick = ()=>{
         const id = btn.getAttribute('data-edit');
@@ -393,6 +399,7 @@
     });
   }
 
+  // Save entry (and auto reset timer)
   function saveHistory(){
     const rate = parseFloat(rateInput.value)||0;
     if (!startWallTs) startWallTs = Date.now() - elapsed;
@@ -413,6 +420,7 @@
       tagInput.value = '';
       renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20);
     }
+    // close popup and auto-reset display (not running)
     saveBackdrop.style.display = "none";
     elapsed = 0; startWallTs = null; endWallTs = null;
     updateDisplays(0);
@@ -461,6 +469,7 @@
   editCancel.onclick = ()=>{ editBackdrop.style.display = "none"; editingId=null; };
   editSave.onclick = applyEdit;
 
+  // confirm delete handlers
   confirmNo.onclick = ()=>{ confirmBackdrop.style.display = "none"; pendingDeleteId=null; };
   confirmYes.onclick = ()=>{
     if (pendingDeleteId){
@@ -472,15 +481,17 @@
     confirmBackdrop.style.display = "none";
   };
 
+  // Persist rate changes
   rateInput.addEventListener('change', ()=>{ saveState(); if (!running) updateDisplays(elapsed); });
 
+  // Save state on unload and at visibility changes
   window.addEventListener('beforeunload', saveState);
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) saveState(); });
 
   // ====== Boot ======
   loadHistoryStore();
   renderHistory(); updateTotals();
-  loadState();
+  loadState(); // may resume timer if it was running
 </script>
 </body>
 </html>
