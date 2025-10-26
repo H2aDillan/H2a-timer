@@ -8,8 +8,8 @@
 <!-- 🔄 Force fresh load (loop-safe). Bump APP_VERSION each release. -->
 <script>
 (function(){
-  const APP_VERSION = "4";            // ← change this number each update
-  const KEY = "ver_guard_seen";       // session guard to stop loops
+  const APP_VERSION = "5";            // ← bump when you deploy
+  const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
     const curr = url.searchParams.get("v");
@@ -21,11 +21,8 @@
         url.searchParams.set("v", APP_VERSION);
         location.replace(url.toString());
       }
-      // else: already tried this version in this session — carry on without redirect
     }
-  } catch (e) {
-    // If URL/sessionStorage fails for any reason, just continue normally.
-  }
+  } catch (e) {}
 })();
 </script>
 
@@ -100,7 +97,8 @@
   </div>
 </div>
 
-<div class="timer" id="timeDisplay">00:00.00</div>
+<!-- Updated default to HH:MM:SS.ms -->
+<div class="timer" id="timeDisplay">00:00:00.00</div>
 <div class="amount" id="moneyDisplay">$0.00</div>
 
 <div class="buttons">
@@ -225,12 +223,17 @@
   // ====== Helpers ======
   function vibrate(ms=20){ if (navigator.vibrate) try{ navigator.vibrate(ms); }catch{} }
   function fmtMoney(n){ return `$${n.toFixed(2)}`; }
+
+  // ✅ Updated to HH:MM:SS.ms
   function formatTime(ms){
-    const totalSeconds = ms/1000;
-    const minutes = Math.floor(totalSeconds/60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2,'0')}:${seconds.toFixed(2).padStart(5,'0')}`;
+    const totalMs = Math.max(0, ms|0);
+    const hours = Math.floor(totalMs / 3600000);
+    const minutes = Math.floor((totalMs % 3600000) / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    const centis = Math.floor((totalMs % 1000) / 10);
+    return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(centis).padStart(2,'0')}`;
   }
+
   function toLocalInput(ts){
     const d = new Date(ts); const pad=n=>String(n).padStart(2,'0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -242,7 +245,7 @@
     const state = {
       running,
       startWallTs,
-      elapsed,       // retained for future pause support
+      elapsed,
       rate: parseFloat(rateInput.value)||0,
       lastSaved: Date.now()
     };
@@ -327,14 +330,13 @@
   }
 
   function clearTimer(){
-    // Only stop via Stop button (your rule). Clear refuses while running.
     if (running){
       alert('Stop the timer first to clear the display.');
       vibrate(8);
       return;
     }
     elapsed = 0; startWallTs = null; endWallTs = null;
-    timeDisplay.textContent = "00:00.00";
+    timeDisplay.textContent = "00:00:00.00";  // reset in HH:MM:SS.ms
     moneyDisplay.textContent = "$0.00";
     saveState();
     vibrate(10);
@@ -376,7 +378,6 @@
       historyList.appendChild(li);
     });
 
-    // delete confirmation
     historyList.querySelectorAll('[data-del]').forEach(btn=>{
       btn.onclick = ()=>{
         pendingDeleteId = btn.getAttribute('data-del');
@@ -384,7 +385,6 @@
       };
     });
 
-    // edit
     historyList.querySelectorAll('[data-edit]').forEach(btn=>{
       btn.onclick = ()=>{
         const id = btn.getAttribute('data-edit');
@@ -399,7 +399,6 @@
     });
   }
 
-  // Save entry (and auto reset timer)
   function saveHistory(){
     const rate = parseFloat(rateInput.value)||0;
     if (!startWallTs) startWallTs = Date.now() - elapsed;
@@ -420,7 +419,6 @@
       tagInput.value = '';
       renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20);
     }
-    // close popup and auto-reset display (not running)
     saveBackdrop.style.display = "none";
     elapsed = 0; startWallTs = null; endWallTs = null;
     updateDisplays(0);
@@ -469,7 +467,6 @@
   editCancel.onclick = ()=>{ editBackdrop.style.display = "none"; editingId=null; };
   editSave.onclick = applyEdit;
 
-  // confirm delete handlers
   confirmNo.onclick = ()=>{ confirmBackdrop.style.display = "none"; pendingDeleteId=null; };
   confirmYes.onclick = ()=>{
     if (pendingDeleteId){
@@ -481,17 +478,15 @@
     confirmBackdrop.style.display = "none";
   };
 
-  // Persist rate changes
   rateInput.addEventListener('change', ()=>{ saveState(); if (!running) updateDisplays(elapsed); });
 
-  // Save state on unload and at visibility changes
   window.addEventListener('beforeunload', saveState);
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) saveState(); });
 
   // ====== Boot ======
   loadHistoryStore();
   renderHistory(); updateTotals();
-  loadState(); // may resume timer if it was running
+  loadState();
 </script>
 </body>
 </html>
