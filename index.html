@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Earnings Timer — Confirm Delete + Auto Reset</title>
+<title>Earnings Timer — Persistent Background & Stop-Only</title>
 <style>
   body{font-family:Arial, sans-serif;background:#0f172a;color:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
   .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px}
@@ -162,6 +162,10 @@
   let editingId = null;
   let pendingDeleteId = null;
 
+  // Storage keys
+  const STORE_KEY_STATE = 'earningsTimer_state_v2';
+  const STORE_KEY_HISTORY = 'earningsTimer_history_v2';
+
   // ====== Elements ======
   const timeDisplay = document.getElementById('timeDisplay');
   const moneyDisplay = document.getElementById('moneyDisplay');
@@ -208,23 +212,84 @@
   }
   function fromLocalInput(val){ return new Date(val.replace(' ', 'T')).getTime(); }
 
+  // ====== Persistence ======
+  function saveState(){
+    const state = {
+      running,
+      startWallTs,
+      elapsed,       // ms accumulated when not running (for pauses; here we don’t auto-pause)
+      rate: parseFloat(rateInput.value)||0,
+      lastSaved: Date.now()
+    };
+    localStorage.setItem(STORE_KEY_STATE, JSON.stringify(state));
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_STATE);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (typeof s.rate === 'number') rateInput.value = String(s.rate);
+      running = !!s.running;
+      startWallTs = typeof s.startWallTs === 'number' ? s.startWallTs : null;
+      elapsed = typeof s.elapsed === 'number' ? s.elapsed : 0;
+
+      // If running, recalc elapsed from wall clock to "catch up"
+      if (running && startWallTs){
+        const now = Date.now();
+        elapsed = Math.max(0, now - startWallTs);
+        startTime = now - elapsed;
+        update();
+        startInterval();
+      }else{
+        // Not running: show whatever was stored
+        updateDisplays(elapsed);
+      }
+    }catch(e){}
+  }
+
+  function saveHistoryStore(){
+    try{ localStorage.setItem(STORE_KEY_HISTORY, JSON.stringify(history)); }catch(e){}
+  }
+  function loadHistoryStore(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_HISTORY);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) history = arr;
+    }catch(e){}
+  }
+
+  // ====== Update Loop & UI ======
   function update(){
     const now = Date.now();
     elapsed = now - startTime;
     endWallTs = now;
+    updateDisplays(elapsed);
+    // Throttle state saves to ~2/sec to reduce writes
+    if (now % 500 < 20) saveState();
+  }
+
+  function updateDisplays(elapsedMs){
     const rate = parseFloat(rateInput.value)||0;
-    const earned = (rate * (elapsed / 3600000));
-    timeDisplay.textContent = formatTime(elapsed);
+    const earned = (rate * (elapsedMs / 3600000));
+    timeDisplay.textContent = formatTime(elapsedMs);
     moneyDisplay.textContent = fmtMoney(earned);
+  }
+
+  function startInterval(){
+    if (interval) clearInterval(interval);
+    interval = setInterval(update, 33); // ~30 FPS is smooth enough, lighter than 10ms
   }
 
   function startTimer(){
     if (running) return;
     running = true;
     const now = Date.now();
-    if (!startWallTs) startWallTs = now;
-    startTime = now - elapsed;
-    interval = setInterval(update, 10);
+    if (!startWallTs) startWallTs = now; // first start
+    startTime = now - elapsed; // support resume if we ever add pause
+    startInterval();
+    saveState();
     vibrate(12);
   }
 
@@ -232,16 +297,25 @@
     if (!running) return;
     running = false;
     clearInterval(interval);
+    interval = null;
     endWallTs = Date.now();
+    saveState();
     saveBackdrop.style.display = "flex";
     vibrate(16);
   }
 
   function clearTimer(){
-    if (running){ running=false; clearInterval(interval); }
+    // Per requirement: the timer must not stop unless Stop is pressed.
+    // So, if running, do nothing (or gently notify).
+    if (running){
+      alert('Stop the timer first to clear the display.');
+      vibrate(8);
+      return;
+    }
     elapsed = 0; startWallTs = null; endWallTs = null;
     timeDisplay.textContent = "00:00.00";
     moneyDisplay.textContent = "$0.00";
+    saveState();
     vibrate(10);
   }
 
@@ -321,12 +395,15 @@
         tag: (tagInput.value||'').trim()
       };
       history.unshift(entry);
+      saveHistoryStore();
       tagInput.value = '';
       renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20);
     }
-    // close popup and auto-reset timer/display
+    // close popup and auto-reset display (not running)
     saveBackdrop.style.display = "none";
-    clearTimer(); // <- auto reset after saving
+    elapsed = 0; startWallTs = null; endWallTs = null;
+    updateDisplays(0);
+    saveState();
   }
 
   function applyEdit(){
@@ -344,6 +421,7 @@
     entry.amount = +(rate * (dur/3600000)).toFixed(2);
     entry.tag = (editTag.value||'').trim();
 
+    saveHistoryStore();
     editingId = null;
     editBackdrop.style.display = "none";
     renderHistory(); updateTotals(); vibrate(15);
@@ -375,11 +453,24 @@
   confirmYes.onclick = ()=>{
     if (pendingDeleteId){
       history = history.filter(h=>String(h.id)!==String(pendingDeleteId));
+      saveHistoryStore();
       renderHistory(); updateTotals(); vibrate(15);
     }
     pendingDeleteId = null;
     confirmBackdrop.style.display = "none";
   };
+
+  // Persist rate changes
+  rateInput.addEventListener('change', ()=>{ saveState(); if (!running) updateDisplays(elapsed); });
+
+  // Save state on unload and at visibility changes
+  window.addEventListener('beforeunload', saveState);
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden) saveState(); });
+
+  // ====== Boot ======
+  loadHistoryStore();
+  renderHistory(); updateTotals();
+  loadState(); // may resume timer if it was running
 </script>
 </body>
 </html>
