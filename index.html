@@ -471,6 +471,15 @@
   loadHistoryStore();
   renderHistory(); updateTotals();
   loadState(); // may resume timer if it was running
+<script>
+  // Version tag to force fresh load
+  const APP_VERSION = "2"; // change this number every update
+  const url = new URL(window.location);
+  if (url.searchParams.get("v") !== APP_VERSION) {
+    url.searchParams.set("v", APP_VERSION);
+    window.location.replace(url.toString());
+  }
+</script>
 </script>
 </body>
 </html>
