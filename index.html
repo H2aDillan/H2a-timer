@@ -4,6 +4,26 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Earnings Timer — Persistent Background & Stop-Only</title>
+
+<!-- Force fresh load: mild extra help on some browsers -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<!-- 🔄 Version pin: change APP_VERSION on each release (e.g., "3", "4", ...) -->
+<script>
+  (function(){
+    const APP_VERSION = "3"; // ⬅️ bump this every update
+    const url = new URL(location.href);
+    const current = url.searchParams.get("v");
+    if (current !== APP_VERSION) {
+      url.searchParams.set("v", APP_VERSION);
+      // Avoid polluting history so back button isn't weird
+      location.replace(url.toString());
+    }
+  })();
+</script>
+
 <style>
   body{font-family:Arial, sans-serif;background:#0f172a;color:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
   .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px}
@@ -217,7 +237,7 @@
     const state = {
       running,
       startWallTs,
-      elapsed,       // ms accumulated when not running (for pauses; here we don’t auto-pause)
+      elapsed,
       rate: parseFloat(rateInput.value)||0,
       lastSaved: Date.now()
     };
@@ -266,7 +286,6 @@
     elapsed = now - startTime;
     endWallTs = now;
     updateDisplays(elapsed);
-    // Throttle state saves to ~2/sec to reduce writes
     if (now % 500 < 20) saveState();
   }
 
@@ -279,15 +298,15 @@
 
   function startInterval(){
     if (interval) clearInterval(interval);
-    interval = setInterval(update, 33); // ~30 FPS is smooth enough, lighter than 10ms
+    interval = setInterval(update, 33);
   }
 
   function startTimer(){
     if (running) return;
     running = true;
     const now = Date.now();
-    if (!startWallTs) startWallTs = now; // first start
-    startTime = now - elapsed; // support resume if we ever add pause
+    if (!startWallTs) startWallTs = now;
+    startTime = now - elapsed;
     startInterval();
     saveState();
     vibrate(12);
@@ -305,8 +324,6 @@
   }
 
   function clearTimer(){
-    // Per requirement: the timer must not stop unless Stop is pressed.
-    // So, if running, do nothing (or gently notify).
     if (running){
       alert('Stop the timer first to clear the display.');
       vibrate(8);
@@ -355,7 +372,6 @@
       historyList.appendChild(li);
     });
 
-    // delete confirmation
     historyList.querySelectorAll('[data-del]').forEach(btn=>{
       btn.onclick = ()=>{
         pendingDeleteId = btn.getAttribute('data-del');
@@ -363,7 +379,6 @@
       };
     });
 
-    // edit
     historyList.querySelectorAll('[data-edit]').forEach(btn=>{
       btn.onclick = ()=>{
         const id = btn.getAttribute('data-edit');
@@ -378,7 +393,6 @@
     });
   }
 
-  // Save entry (and auto reset timer)
   function saveHistory(){
     const rate = parseFloat(rateInput.value)||0;
     if (!startWallTs) startWallTs = Date.now() - elapsed;
@@ -399,7 +413,6 @@
       tagInput.value = '';
       renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20);
     }
-    // close popup and auto-reset display (not running)
     saveBackdrop.style.display = "none";
     elapsed = 0; startWallTs = null; endWallTs = null;
     updateDisplays(0);
@@ -448,7 +461,6 @@
   editCancel.onclick = ()=>{ editBackdrop.style.display = "none"; editingId=null; };
   editSave.onclick = applyEdit;
 
-  // confirm delete handlers
   confirmNo.onclick = ()=>{ confirmBackdrop.style.display = "none"; pendingDeleteId=null; };
   confirmYes.onclick = ()=>{
     if (pendingDeleteId){
@@ -460,26 +472,15 @@
     confirmBackdrop.style.display = "none";
   };
 
-  // Persist rate changes
   rateInput.addEventListener('change', ()=>{ saveState(); if (!running) updateDisplays(elapsed); });
 
-  // Save state on unload and at visibility changes
   window.addEventListener('beforeunload', saveState);
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) saveState(); });
 
   // ====== Boot ======
   loadHistoryStore();
   renderHistory(); updateTotals();
-  loadState(); // may resume timer if it was running
-<script>
-  // Version tag to force fresh load
-  const APP_VERSION = "2"; // change this number every update
-  const url = new URL(window.location);
-  if (url.searchParams.get("v") !== APP_VERSION) {
-    url.searchParams.set("v", APP_VERSION);
-    window.location.replace(url.toString());
-  }
-</script>
+  loadState();
 </script>
 </body>
 </html>
