@@ -8,7 +8,7 @@
 <!-- 🔄 Force fresh load (loop-safe). Bump APP_VERSION each release. -->
 <script>
 (function(){
-  const APP_VERSION = "5";            // ← bump when you deploy
+  const APP_VERSION = "6";            // ← bumped for this release
   const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
@@ -41,12 +41,30 @@
   #stop{background:#dc2626}
   #clear{background:#6b7280}
 
+  /* History button (center bottom) */
   #historyBtn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s}
   #historyBtn:hover{background:#334155}
   #historyBtn.flash{background:#22c55e !important;box-shadow:0 0 0 6px rgba(34,197,94,.25)}
   .book{width:18px;height:18px;fill:#8b5a2b}
 
-  #historyPanel{position:fixed;bottom:-75%;left:0;width:100%;max-height:75%;background:#1e293b;color:#f8fafc;border-top:2px solid #334155;border-radius:12px 12px 0 0;padding:0;transition:bottom .3s;display:flex;flex-direction:column}
+  /* Menu button (bottom-left) */
+  #menuBtn{position:fixed;bottom:20px;left:20px;background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s}
+  #menuBtn:hover{background:#334155}
+  .hamburger{width:18px;height:18px;display:inline-block}
+  .hamburger svg{width:18px;height:18px}
+
+  /* Menu side panel */
+  #menuPanel{position:fixed;top:0;left:-75%;width:75%;height:100%;background:#1e293b;border-right:2px solid #334155;border-radius:0 12px 12px 0;transition:left .3s;display:flex;flex-direction:column;z-index:30}
+  #menuPanel.show{left:0}
+  #menuHeader{background:#0f172a;padding:12px 16px;border-radius:0 12px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #334155}
+  #menuHeader .title{display:inline-flex;align-items:center;gap:8px}
+  #menuHeader h3{margin:0;font-size:18px}
+  #closeMenu{background:#dc2626;border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}
+  #menuContent{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+  .menu-item{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px;font-size:14px;color:#e2e8f0}
+
+  /* History panel */
+  #historyPanel{position:fixed;bottom:-75%;left:0;width:100%;max-height:75%;background:#1e293b;color:#f8fafc;border-top:2px solid #334155;border-radius:12px 12px 0 0;padding:0;transition:bottom .3s;display:flex;flex-direction:column;z-index:20}
   #historyPanel.show{bottom:0}
   #historyHeader{background:#0f172a;padding:12px 16px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #334155}
   #historyHeader .title{display:inline-flex;align-items:center;gap:8px}
@@ -68,7 +86,7 @@
   .btn-small{background:#334155;border:1px solid #465368;color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}
   .btn-danger{background:#7f1d1d;border-color:#b91c1c}
 
-  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40}
   .modal{background:#1e293b;border-radius:12px;padding:16px;width:300px}
   .modal h3{margin:0 0 10px;text-align:center}
   .field{display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-top:8px}
@@ -107,12 +125,47 @@
   <button id="clear">Clear</button>
 </div>
 
+<!-- Menu button (bottom-left) -->
+<button id="menuBtn" aria-controls="menuPanel" aria-expanded="false">
+  <span class="hamburger" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
+      <path d="M4 7h16"></path>
+      <path d="M4 12h16"></path>
+      <path d="M4 17h16"></path>
+    </svg>
+  </span>
+  Menu
+</button>
+
+<!-- History button (bottom-center) -->
 <button id="historyBtn" aria-live="polite">
   <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
   </svg>
   History
 </button>
+
+<!-- Slide-in Menu Panel -->
+<div id="menuPanel" aria-hidden="true" role="dialog" aria-labelledby="menuTitle">
+  <div id="menuHeader">
+    <div class="title">
+      <span class="hamburger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
+          <path d="M4 7h16"></path>
+          <path d="M4 12h16"></path>
+          <path d="M4 17h16"></path>
+        </svg>
+      </span>
+      <h3 id="menuTitle">Menu</h3>
+    </div>
+    <button id="closeMenu">Close</button>
+  </div>
+  <div id="menuContent">
+    <div class="menu-item">Settings shortcut: adjust your $/hr at the top-left. Riveting, I know.</div>
+    <div class="menu-item">Tips: tap Stop to save, then tag your session. History totals update automatically.</div>
+    <div class="menu-item">Coming soon: export, themes, and whatever else you dream up at 2 a.m.</div>
+  </div>
+</div>
 
 <div id="historyPanel" aria-hidden="true">
   <div id="historyHeader">
@@ -219,6 +272,11 @@
   const confirmBackdrop = document.getElementById('confirmBackdrop');
   const confirmYes = document.getElementById('confirmYes');
   const confirmNo = document.getElementById('confirmNo');
+
+  // New: menu elements
+  const menuBtn = document.getElementById('menuBtn');
+  const menuPanel = document.getElementById('menuPanel');
+  const closeMenu = document.getElementById('closeMenu');
 
   // ====== Helpers ======
   function vibrate(ms=20){ if (navigator.vibrate) try{ navigator.vibrate(ms); }catch{} }
@@ -479,6 +537,16 @@
   };
 
   rateInput.addEventListener('change', ()=>{ saveState(); if (!running) updateDisplays(elapsed); });
+
+  // Menu open/close
+  function toggleMenu(forceOpen){
+    const willOpen = typeof forceOpen === 'boolean' ? forceOpen : !menuPanel.classList.contains('show');
+    menuPanel.classList.toggle('show', willOpen);
+    menuPanel.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+    menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  }
+  menuBtn.onclick = ()=> toggleMenu();
+  closeMenu.onclick = ()=> toggleMenu(false);
 
   window.addEventListener('beforeunload', saveState);
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) saveState(); });
