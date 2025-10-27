@@ -8,7 +8,7 @@
 <!-- 🔄 Force fresh load -->
 <script>
 (function(){
-  const APP_VERSION = "21";
+  const APP_VERSION = "22";
   const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
@@ -201,16 +201,24 @@
 
   canvas{background:linear-gradient(180deg,#0b1224,#0f172a);border:1px solid #2b3f6f;border-radius:14px;margin-bottom:14px;box-shadow:0 12px 28px rgba(0,0,0,.35), 0 0 24px rgba(96,165,250,.15)}
 
-  .analytics-info{
-    background:linear-gradient(180deg,#0f172a,#0c1426);
-    border:1px solid #2b3f6f;border-radius:12px;padding:12px;font-size:14px;color:#dbeafe;
-    box-shadow:0 12px 28px rgba(0,0,0,.35);
+  /* Break Analytics block inside Stats */
+  .break-section{
+    margin:12px 0 16px 0;
+    background:linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:14px;padding:14px;
+    box-shadow:0 0 15px rgba(34,197,94,.2);
   }
-  .analytics-info p{margin:6px 0}
-  .analytics-info span{font-weight:800;text-shadow:0 0 12px rgba(255,255,255,.15)}
-  #avgRate{color:var(--green)}
-  #avgDay{color:var(--cyan)}
-  #trend{color:var(--purple)}
+  .break-title{
+    font-size:18px;font-weight:800;color:var(--green);
+    text-align:center;margin:0 0 8px 0;
+    text-shadow:0 0 12px rgba(34,197,94,.5);
+    letter-spacing:.3px;
+  }
+  .break-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;text-align:center}
+  .break-summary div{background:#0f172a;border:1px solid #2b3f6f;border-radius:12px;padding:10px;box-shadow:0 0 10px rgba(34,197,94,.18)}
+  .break-summary span{display:block;color:var(--green);font-weight:800;font-size:16px;margin-top:4px}
+  @keyframes pulseGlow {0%,100% {box-shadow:0 0 20px rgba(34,197,94,.45)}50% {box-shadow:0 0 40px rgba(34,197,94,.85)}}
+  #breakChart{animation:pulseGlow 3s infinite ease-in-out}
 
   /* Light theme quick overrides */
   body.light{background:#f5f7fb;color:#0f172a}
@@ -417,6 +425,18 @@
     </div>
     <canvas id="earningsChart" height="170"></canvas>
     <canvas id="hoursChart" height="170"></canvas>
+
+    <!-- Break Analytics inside Stats -->
+    <div class="break-section">
+      <p class="break-title">Break Analytics</p>
+      <canvas id="breakChart" height="200"></canvas>
+      <div class="break-summary" style="margin-top:12px">
+        <div>Total Break<span id="breakTotal">0m</span></div>
+        <div>Average Break<span id="breakAvg">0m</span></div>
+        <div>Focus Ratio<span id="focusRatio">100%</span></div>
+      </div>
+    </div>
+
     <div class="analytics-info">
       <p>Average hourly rate: <span id="avgRate">$0/hr</span></p>
       <p>Average daily earnings (7d): <span id="avgDay">$0</span></p>
@@ -551,6 +571,7 @@
 
   let earningsChart = null;
   let hoursChart = null;
+  let breakChart = null;
 
   /* ========= Helpers ========= */
   const pad2 = n => String(n).padStart(2,'0');
@@ -1035,6 +1056,53 @@
     trendEl.textContent = trendUp ? "Uptrend" : "Slight dip";
 
     renderCharts(labelsFromDates(last7), earningsSeries, hoursSeries);
+
+    // ----- Break Analytics (today) -----
+    const todayTotalMs = (todayFixed.ms + todayLive.ms);
+    const todayBreakMs = todayFixed.breakMs;
+    const workMs = Math.max(0, todayTotalMs - todayBreakMs);
+    const focusPct = todayTotalMs > 0 ? (workMs / todayTotalMs * 100) : 100;
+
+    // Average break over last 7 days (per session)
+    let sessions7 = 0, breaks7 = 0;
+    for (const h of history){
+      if (h.endTs >= last7[0] && h.endTs < last7[6] + 86400000){
+        sessions7 += 1;
+        breaks7 += (h.breakMs || 0);
+      }
+    }
+    const avgBreakMs = sessions7 ? (breaks7 / sessions7) : 0;
+
+    document.getElementById('breakTotal').textContent = humanShort(todayBreakMs);
+    document.getElementById('breakAvg').textContent = humanShort(avgBreakMs);
+    document.getElementById('focusRatio').textContent = `${focusPct.toFixed(1)}%`;
+
+    if (breakChart) breakChart.destroy();
+    const bctx = document.getElementById('breakChart').getContext('2d');
+    breakChart = new Chart(bctx, {
+      type:'doughnut',
+      data:{
+        labels:['Work','Break'],
+        datasets:[{
+          data:[workMs, todayBreakMs],
+          backgroundColor:['#22c55e','#ef4444'],
+          borderColor:'#0b1224',
+          borderWidth:2,
+          hoverOffset:10
+        }]
+      },
+      options:{
+        cutout:'70%',
+        plugins:{
+          legend:{labels:{color:'#e2e8f0'}},
+          tooltip:{callbacks:{label:(ctx)=>{
+            const val = ctx.raw||0;
+            return `${ctx.label}: ${humanShort(val)}`;
+          }}}
+        },
+        animation:{animateRotate:true, animateScale:true}
+      }
+    });
   }
 
   function renderCharts(labels, earnings, hours){
@@ -1047,12 +1115,10 @@
     const eArea = {top:0,bottom:170};
     const hArea = {top:0,bottom:170};
 
-    const earningsBg = gradient(ectx, eArea, 'rgba(34,197,94,0.08)','rgba(34,197,94,0.45)');
     const earningsBar = 'rgba(34,197,94,0.9)';
     const hoursLine = '#60a5fa';
     const hoursFill = gradient(hctx, hArea, 'rgba(96,165,250,0.08)','rgba(96,165,250,0.35)');
 
-    // Bar with per-column colors for extra flair
     const barColors = earnings.map((v,i)=> i===labels.length-1 ? 'rgba(34,197,94,1)' :
       ['#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b','#ef4444','#22d3ee'][i%7]);
 
@@ -1077,7 +1143,7 @@
           y:{ticks:{color:'#e2e8f0'}, beginAtZero:true}
         }
       },
-      plugins:[{id:'panelGlow', afterDraw(c){ const ctx=c.ctx; ctx.save(); ctx.shadowColor='rgba(34,197,94,.35)'; ctx.shadowBlur=16; ctx.restore(); }},'glow']
+      plugins:['glow']
     });
 
     hoursChart = new Chart(hctx, {
