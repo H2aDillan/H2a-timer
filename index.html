@@ -8,7 +8,7 @@
 <!-- 🔄 Force fresh load (loop-safe). Bump APP_VERSION each release. -->
 <script>
 (function(){
-  const APP_VERSION = "7";            // ← bumped for this release
+  const APP_VERSION = "8";            // ← bumped for this release
   const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
@@ -34,10 +34,18 @@
   .rate-wrap{display:flex;align-items:center;gap:8px;background:#374151;border:1px solid #4b5563;border-radius:8px;padding:6px 8px}
   input[type="number"]{width:110px;padding:6px 6px;border:none;outline:none;font-size:16px;text-align:right;background:transparent;color:#f8fafc}
 
-  .timer{font-size:3rem;margin-bottom:10px}
-  .amount{font-size:3rem;color:#22c55e;margin-bottom:20px}
+  .timer{font-size:3rem;margin-bottom:6px}
+  .amount{font-size:3rem;color:#22c55e;margin-bottom:16px}
 
-  .buttons{display:flex;gap:10px}
+  /* Break timer under main timer */
+  .break-timer{font-size:1.1rem;color:#ef4444;margin-bottom:14px;display:none}
+  .break-timer.show{display:block}
+  .break-timer.paused{opacity:.85}
+
+  .buttons{display:flex;gap:10px;margin-bottom:10px}
+  .buttons2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:min(420px,90vw)}
+  .buttons2 button{width:100%}
+
   button{background:#2563eb;border:none;color:#fff;padding:12px 24px;border-radius:10px;font-size:16px;cursor:pointer}
   #stop{background:#dc2626}
   #clear{background:#6b7280}
@@ -93,7 +101,7 @@
   .btn-danger{background:#7f1d1d;border-color:#b91c1c}
 
   .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40}
-  .modal{background:#1e293b;border-radius:12px;padding:16px;width:320px}
+  .modal{background:#1e293b;border-radius:12px;padding:16px;width:340px}
   .modal h3{margin:0 0 10px;text-align:center}
   .field{display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-top:8px}
   .field input, .field select{flex:1;background:transparent;border:none;outline:none;color:#f8fafc}
@@ -158,10 +166,21 @@
 <div class="timer" id="timeDisplay">00:00:00.00</div>
 <div class="amount" id="moneyDisplay">$0.00</div>
 
+<!-- Red break timer -->
+<div class="break-timer" id="breakDisplay">Break: 00:00</div>
+
 <div class="buttons">
   <button id="start">Start</button>
   <button id="stop">Stop</button>
   <button id="clear">Clear</button>
+</div>
+
+<!-- New scheduling & break controls -->
+<div class="buttons2">
+  <button id="startAtBtn">Start At</button>
+  <button id="stopAtBtn">Stop At</button>
+  <button id="takeBreakBtn">Take Break</button>
+  <button id="endBreakBtn">End Break</button>
 </div>
 
 <!-- Menu button (bottom-left) -->
@@ -200,11 +219,10 @@
     <button id="closeMenu">Close</button>
   </div>
   <div id="menuContent">
-    <div class="menu-item">Settings shortcut: adjust your $/hr at the top-left. Riveting, I know. <button class="link" id="settingsRowBtn">Open Settings</button></div>
+    <div class="menu-item">Settings shortcut: adjust your $/hr at the top-left. <button class="link" id="settingsRowBtn">Open Settings</button></div>
     <div class="menu-item">Tips: tap Stop to save, then tag your session. History totals update automatically.</div>
     <div class="menu-item">Coming soon: export, themes, and whatever else you dream up at 2 a.m.</div>
   </div>
-  <!-- Settings button inside menu (bottom-right corner) -->
   <button id="settingsBtn" aria-controls="settingsBackdrop">Settings</button>
 </div>
 
@@ -308,6 +326,42 @@
   </div>
 </div>
 
+<!-- Start At Popup -->
+<div id="startAtBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="startAtTitle">
+  <div class="modal">
+    <h3 id="startAtTitle">Start At</h3>
+    <div class="field"><label style="width:90px;color:#94a3b8">Date/Time</label><input id="startAtInput" type="datetime-local"></div>
+    <div class="actions">
+      <button id="startAtCancel" style="background:#6b7280;">Cancel</button>
+      <button id="startAtSave" style="background:#22c55e;">Set</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stop At Popup -->
+<div id="stopAtBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="stopAtTitle">
+  <div class="modal">
+    <h3 id="stopAtTitle">Stop At</h3>
+    <div class="field"><label style="width:90px;color:#94a3b8">Date/Time</label><input id="stopAtInput" type="datetime-local"></div>
+    <div class="actions">
+      <button id="stopAtCancel" style="background:#6b7280;">Cancel</button>
+      <button id="stopAtSave" style="background:#22c55e;">Set</button>
+    </div>
+  </div>
+</div>
+
+<!-- Break Setup Popup -->
+<div id="breakBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="breakTitle">
+  <div class="modal">
+    <h3 id="breakTitle">Take Break</h3>
+    <div class="field"><label style="width:120px;color:#94a3b8">Minutes</label><input id="breakMinutes" type="number" min="1" step="1" value="15"></div>
+    <div class="actions">
+      <button id="breakCancel" style="background:#6b7280;">Cancel</button>
+      <button id="breakStart" style="background:#22c55e;">Start Break</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ====== State ======
   let startTime = 0, elapsed = 0, running = false, interval = null;
@@ -317,46 +371,63 @@
   let editingId = null;
   let pendingDeleteId = null;
 
+  // Schedules
+  let scheduledStartTs = null;
+  let scheduledStopTs = null;
+
+  // Breaks
+  let onBreak = false;
+  let breakEndTs = null;
+  let breakInterval = null;
+  let lastBreakSnapshot = null; // remaining ms when frozen
+
   // Preferences
   let prefs = { theme:'dark', sound:true, haptics:true };
 
   // Storage keys
-  const STORE_KEY_STATE = 'earningsTimer_state_v2';
+  const STORE_KEY_STATE   = 'earningsTimer_state_v3';
   const STORE_KEY_HISTORY = 'earningsTimer_history_v2';
-  const STORE_KEY_PREFS = 'earningsTimer_prefs_v1';
+  const STORE_KEY_PREFS   = 'earningsTimer_prefs_v1';
 
   // ====== Elements ======
-  const timeDisplay = document.getElementById('timeDisplay');
-  const moneyDisplay = document.getElementById('moneyDisplay');
+  const timeDisplay   = document.getElementById('timeDisplay');
+  const moneyDisplay  = document.getElementById('moneyDisplay');
+  const breakDisplay  = document.getElementById('breakDisplay');
+
   const rateInput = document.getElementById('rate');
   const startBtn = document.getElementById('start');
-  const stopBtn = document.getElementById('stop');
+  const stopBtn  = document.getElementById('stop');
   const clearBtn = document.getElementById('clear');
 
-  const historyBtn = document.getElementById('historyBtn');
+  const startAtBtn = document.getElementById('startAtBtn');
+  const stopAtBtn  = document.getElementById('stopAtBtn');
+  const takeBreakBtn = document.getElementById('takeBreakBtn');
+  const endBreakBtn  = document.getElementById('endBreakBtn');
+
+  const historyBtn   = document.getElementById('historyBtn');
   const historyPanel = document.getElementById('historyPanel');
   const closeHistory = document.getElementById('closeHistory');
-  const historyList = document.getElementById('historyList');
-  const weekTotalEl = document.getElementById('weekTotal');
+  const historyList  = document.getElementById('historyList');
+  const weekTotalEl  = document.getElementById('weekTotal');
   const monthTotalEl = document.getElementById('monthTotal');
 
-  const saveBackdrop = document.getElementById('saveBackdrop');
-  const discardBtn = document.getElementById('discardBtn');
-  const saveBtn = document.getElementById('saveBtn');
-  const tagInput = document.getElementById('tagInput');
+  const saveBackdrop  = document.getElementById('saveBackdrop');
+  const discardBtn    = document.getElementById('discardBtn');
+  const saveBtn       = document.getElementById('saveBtn');
+  const tagInput      = document.getElementById('tagInput');
 
   const editBackdrop = document.getElementById('editBackdrop');
   const editStart = document.getElementById('editStart');
-  const editEnd = document.getElementById('editEnd');
-  const editTag = document.getElementById('editTag');
-  const editCancel = document.getElementById('editCancel');
-  const editSave = document.getElementById('editSave');
+  const editEnd   = document.getElementById('editEnd');
+  const editTag   = document.getElementById('editTag');
+  const editCancel= document.getElementById('editCancel');
+  const editSave  = document.getElementById('editSave');
 
   const confirmBackdrop = document.getElementById('confirmBackdrop');
   const confirmYes = document.getElementById('confirmYes');
-  const confirmNo = document.getElementById('confirmNo');
+  const confirmNo  = document.getElementById('confirmNo');
 
-  // New: menu & settings elements
+  // Menu & settings
   const menuBtn = document.getElementById('menuBtn');
   const menuPanel = document.getElementById('menuPanel');
   const closeMenu = document.getElementById('closeMenu');
@@ -365,10 +436,27 @@
 
   const settingsBackdrop = document.getElementById('settingsBackdrop');
   const settingsClose = document.getElementById('settingsClose');
-  const settingsSave = document.getElementById('settingsSave');
+  const settingsSave  = document.getElementById('settingsSave');
   const themeSelect = document.getElementById('themeSelect');
   const soundToggle = document.getElementById('soundToggle');
   const hapticsToggle = document.getElementById('hapticsToggle');
+
+  // Start/Stop At modals
+  const startAtBackdrop = document.getElementById('startAtBackdrop');
+  const startAtInput    = document.getElementById('startAtInput');
+  const startAtCancel   = document.getElementById('startAtCancel');
+  const startAtSave     = document.getElementById('startAtSave');
+
+  const stopAtBackdrop = document.getElementById('stopAtBackdrop');
+  const stopAtInput    = document.getElementById('stopAtInput');
+  const stopAtCancel   = document.getElementById('stopAtCancel');
+  const stopAtSave     = document.getElementById('stopAtSave');
+
+  // Break modal
+  const breakBackdrop = document.getElementById('breakBackdrop');
+  const breakMinutes  = document.getElementById('breakMinutes');
+  const breakCancel   = document.getElementById('breakCancel');
+  const breakStart    = document.getElementById('breakStart');
 
   // ====== Helpers ======
   function savePrefs(){
@@ -386,9 +474,7 @@
       }
     }catch{}
   }
-  function applyTheme(){
-    document.body.classList.toggle('light', prefs.theme === 'light');
-  }
+  function applyTheme(){ document.body.classList.toggle('light', prefs.theme === 'light'); }
   function updateSettingsUI(){
     themeSelect.value = prefs.theme;
     soundToggle.checked = !!prefs.sound;
@@ -400,7 +486,7 @@
     if (navigator.vibrate) { try{ navigator.vibrate(ms); }catch{} }
   }
 
-  // Tiny pip sound with WebAudio. No loading, no drama.
+  // Tiny beep
   let audioCtx = null;
   function playSound(freq=880, durMs=70){
     if (!prefs.sound) return;
@@ -421,15 +507,22 @@
   }
 
   function fmtMoney(n){ return `$${n.toFixed(2)}`; }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function fmtMMSS(ms){
+    const s = Math.max(0, Math.floor(ms/1000));
+    const m = Math.floor(s/60);
+    const r = s % 60;
+    return `${pad2(m)}:${pad2(r)}`;
+  }
 
-  // ✅ Updated to HH:MM:SS.ms
+  // ✅ HH:MM:SS.ms
   function formatTime(ms){
     const totalMs = Math.max(0, ms|0);
     const hours = Math.floor(totalMs / 3600000);
     const minutes = Math.floor((totalMs % 3600000) / 60000);
     const seconds = Math.floor((totalMs % 60000) / 1000);
     const centis = Math.floor((totalMs % 1000) / 10);
-    return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(centis).padStart(2,'0')}`;
+    return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}.${pad2(centis)}`;
   }
 
   function toLocalInput(ts){
@@ -443,9 +536,15 @@
     const state = {
       running,
       startWallTs,
+      endWallTs,
       elapsed,
       rate: parseFloat(rateInput.value)||0,
-      lastSaved: Date.now()
+      lastSaved: Date.now(),
+      scheduledStartTs,
+      scheduledStopTs,
+      onBreak,
+      breakEndTs,
+      lastBreakSnapshot
     };
     try{ localStorage.setItem(STORE_KEY_STATE, JSON.stringify(state)); }catch{}
   }
@@ -456,9 +555,27 @@
       if (!raw) return;
       const s = JSON.parse(raw);
       if (typeof s.rate === 'number') rateInput.value = String(s.rate);
+
       running = !!s.running;
       startWallTs = typeof s.startWallTs === 'number' ? s.startWallTs : null;
-      elapsed = typeof s.elapsed === 'number' ? s.elapsed : 0;
+      endWallTs   = typeof s.endWallTs   === 'number' ? s.endWallTs   : null;
+      elapsed     = typeof s.elapsed     === 'number' ? s.elapsed     : 0;
+
+      scheduledStartTs = typeof s.scheduledStartTs === 'number' ? s.scheduledStartTs : null;
+      scheduledStopTs  = typeof s.scheduledStopTs  === 'number' ? s.scheduledStopTs  : null;
+
+      onBreak = !!s.onBreak;
+      breakEndTs = typeof s.breakEndTs === 'number' ? s.breakEndTs : null;
+      lastBreakSnapshot = typeof s.lastBreakSnapshot === 'number' ? s.lastBreakSnapshot : null;
+
+      if (onBreak){
+        showBreak();
+        if (breakEndTs && Date.now() < breakEndTs){
+          startBreakTicker();
+        }else{
+          freezeBreakDisplay();
+        }
+      }
 
       if (running && startWallTs){
         const now = Date.now();
@@ -487,10 +604,31 @@
   // ====== Update Loop & UI ======
   function update(){
     const now = Date.now();
-    elapsed = now - startTime;
-    endWallTs = now;
-    updateDisplays(elapsed);
-    if (now % 500 < 20) saveState();
+
+    // Handle scheduled start
+    if (scheduledStartTs && now >= scheduledStartTs && !running && !onBreak){
+      scheduledStartTs = null;
+      startTimer();
+    }
+
+    // Handle scheduled stop
+    if (scheduledStopTs && now >= scheduledStopTs && running){
+      scheduledStopTs = null;
+      // Force stop at the scheduled moment
+      running = false;
+      clearInterval(interval); interval = null;
+      endWallTs = now; // now is >= scheduled
+      saveState();
+      saveBackdrop.style.display = "flex";
+      vibrate(16); playSound(600, 90);
+    }
+
+    if (running){
+      elapsed = now - startTime;
+      endWallTs = now;
+      updateDisplays(elapsed);
+      if (now % 500 < 20) saveState();
+    }
   }
 
   function updateDisplays(elapsedMs){
@@ -510,7 +648,7 @@
     running = true;
     const now = Date.now();
     if (!startWallTs) startWallTs = now;
-    startTime = now - elapsed;
+    startTime = now - elapsed; // respect any prior elapsed (e.g., set by Start At past)
     startInterval();
     saveState();
     vibrate(12);
@@ -648,9 +786,41 @@
     renderHistory(); updateTotals(); vibrate(15); playSound(800, 70);
   }
 
+  // ===== Break UI =====
+  function showBreak(){
+    breakDisplay.classList.add('show');
+    breakDisplay.classList.remove('paused');
+  }
+  function hideBreak(){ // not used, but here if you ever want it
+    breakDisplay.classList.remove('show');
+    breakDisplay.classList.remove('paused');
+  }
+  function setBreakText(ms){ breakDisplay.textContent = `Break: ${fmtMMSS(ms)}`; }
+  function startBreakTicker(){
+    if (breakInterval) clearInterval(breakInterval);
+    breakInterval = setInterval(()=>{
+      const remaining = Math.max(0, breakEndTs - Date.now());
+      setBreakText(remaining);
+      if (remaining <= 0){
+        clearInterval(breakInterval); breakInterval = null;
+        vibrate(25); playSound(500, 120);
+        // Stay on break until user presses End Break
+        setBreakText(0);
+      }
+    }, 200);
+  }
+  function freezeBreakDisplay(){
+    if (breakInterval){ clearInterval(breakInterval); breakInterval = null; }
+    breakDisplay.classList.add('paused');
+    const remaining = typeof lastBreakSnapshot === 'number'
+      ? lastBreakSnapshot
+      : Math.max(0, (breakEndTs||Date.now()) - Date.now());
+    setBreakText(remaining);
+  }
+
   // ====== Events ======
   startBtn.onclick = startTimer;
-  stopBtn.onclick = stopTimer;
+  stopBtn.onclick  = stopTimer;
   clearBtn.onclick = clearTimer;
 
   historyBtn.onclick = ()=>{
@@ -692,14 +862,11 @@
   menuBtn.onclick = ()=> toggleMenu();
   closeMenu.onclick = ()=> toggleMenu(false);
 
-  // Settings open/close
-  function openSettings(){
-    updateSettingsUI();
-    settingsBackdrop.style.display = 'flex';
-  }
+  // Settings
+  function openSettings(){ updateSettingsUI(); settingsBackdrop.style.display='flex'; }
   settingsBtn.onclick = openSettings;
   if (settingsRowBtn) settingsRowBtn.onclick = openSettings;
-  settingsClose.onclick = ()=>{ settingsBackdrop.style.display = 'none'; };
+  settingsClose.onclick = ()=>{ settingsBackdrop.style.display='none'; };
   settingsSave.onclick = ()=>{
     prefs.theme = themeSelect.value === 'light' ? 'light' : 'dark';
     prefs.sound = !!soundToggle.checked;
@@ -710,24 +877,148 @@
     vibrate(8);
     playSound(700, 70);
   };
+  settingsBackdrop.addEventListener('click', (e)=>{ if (e.target===settingsBackdrop) settingsBackdrop.style.display='none'; });
 
-  // Close settings when clicking backdrop
-  settingsBackdrop.addEventListener('click', (e)=>{
-    if (e.target === settingsBackdrop) settingsBackdrop.style.display = 'none';
-  });
+  // Start At
+  startAtBtn.onclick = ()=>{
+    startAtInput.value = toLocalInput(Date.now());
+    startAtBackdrop.style.display = 'flex';
+  };
+  startAtCancel.onclick = ()=>{ startAtBackdrop.style.display = 'none'; };
+  startAtSave.onclick = ()=>{
+    const val = startAtInput.value;
+    if (!val){ alert('Pick a valid date/time.'); return; }
+    const ts = fromLocalInput(val);
+    const now = Date.now();
 
-  window.addEventListener('beforeunload', ()=>{
+    if (ts <= now){
+      // Backfill start
+      startWallTs = ts;
+      elapsed = now - ts;
+      startTime = now - elapsed;
+      running = true;
+      startInterval();
+      vibrate(12); playSound(1200, 80);
+      scheduledStartTs = null;
+      saveState();
+      updateDisplays(elapsed);
+    } else {
+      // Schedule future start
+      scheduledStartTs = ts;
+      // Prepare so when it starts, elapsed begins from ts
+      startWallTs = ts;
+      elapsed = 0;
+      running = false;
+      if (interval){ clearInterval(interval); interval=null; }
+      updateDisplays(0);
+      vibrate(8); playSound(900, 70);
+      saveState();
+    }
+    startAtBackdrop.style.display = 'none';
+  };
+
+  // Stop At
+  stopAtBtn.onclick = ()=>{
+    stopAtInput.value = toLocalInput(Date.now());
+    stopAtBackdrop.style.display = 'flex';
+  };
+  stopAtCancel.onclick = ()=>{ stopAtBackdrop.style.display = 'none'; };
+  stopAtSave.onclick = ()=>{
+    const val = stopAtInput.value;
+    if (!val){ alert('Pick a valid date/time.'); return; }
+    if (!startWallTs){ alert('No active session to stop.'); return; }
+    const ts = fromLocalInput(val);
+    const now = Date.now();
+
+    if (ts <= now){
+      // Stop immediately at past time
+      running = false;
+      if (interval){ clearInterval(interval); interval=null; }
+      endWallTs = ts;
+      elapsed = Math.max(0, endWallTs - startWallTs);
+      updateDisplays(elapsed);
+      saveState();
+      saveBackdrop.style.display = 'flex';
+      vibrate(16); playSound(600, 90);
+      scheduledStopTs = null;
+    } else {
+      // Schedule future stop while continuing to run
+      scheduledStopTs = ts;
+      vibrate(8); playSound(800, 70);
+      saveState();
+    }
+    stopAtBackdrop.style.display = 'none';
+  };
+
+  // Break flow
+  takeBreakBtn.onclick = ()=>{
+    if (onBreak){ return; }
+    breakMinutes.value = breakMinutes.value || 15;
+    breakBackdrop.style.display = 'flex';
+  };
+  breakCancel.onclick = ()=>{ breakBackdrop.style.display='none'; };
+  breakStart.onclick = ()=>{
+    const mins = Math.max(1, parseInt(breakMinutes.value||'15',10));
+    breakBackdrop.style.display = 'none';
+
+    // Pause work timer
+    if (running){
+      running = false;
+      if (interval){ clearInterval(interval); interval=null; }
+      // keep elapsed as-is; when resuming we'll continue from here
+    }
+
+    onBreak = true;
+    breakEndTs = Date.now() + mins*60*1000;
+    lastBreakSnapshot = null;
+
+    showBreak();
+    setBreakText(breakEndTs - Date.now());
+    startBreakTicker();
+
+    vibrate(12); playSound(500, 90);
     saveState();
-    savePrefs();
+  };
+
+  endBreakBtn.onclick = ()=>{
+    if (!onBreak){
+      // If not currently on break but you want the red timer to stay frozen, do nothing.
+      return;
+    }
+    // Freeze the display with remaining time (or zero)
+    lastBreakSnapshot = Math.max(0, (breakEndTs||Date.now()) - Date.now());
+    freezeBreakDisplay();
+
+    onBreak = false;
+    // Resume main timer
+    const now = Date.now();
+    // When resuming, startTime should be now - elapsed
+    startTime = now - elapsed;
+    running = true;
+    startInterval();
+
+    vibrate(14); playSound(900, 80);
+    saveState();
+  };
+
+  // Close backdrops on outside click
+  [startAtBackdrop, stopAtBackdrop, breakBackdrop].forEach(el=>{
+    el.addEventListener('click', (e)=>{ if (e.target===el) el.style.display='none'; });
   });
+
+  window.addEventListener('beforeunload', ()=>{ saveState(); savePrefs(); });
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ saveState(); savePrefs(); } });
 
   // ====== Boot ======
-  loadPrefs();
-  applyTheme();
-  loadHistoryStore();
-  renderHistory(); updateTotals();
+  loadPrefs(); applyTheme();
+  loadHistoryStore(); renderHistory(); updateTotals();
   loadState();
+
+  // Kick a slow tick to catch schedules even if main timer is idle
+  setInterval(()=>{
+    // Trigger update even when not running so scheduled start/stop still fire
+    update();
+  }, 250);
 </script>
 </body>
 </html>
