@@ -8,7 +8,7 @@
 <!-- 🔄 Force fresh load (loop-safe). Bump APP_VERSION each release. -->
 <script>
 (function(){
-  const APP_VERSION = "6";            // ← bumped for this release
+  const APP_VERSION = "7";            // ← bumped for this release
   const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
@@ -27,6 +27,7 @@
 </script>
 
 <style>
+  /* ===== Base (Dark) ===== */
   body{font-family:Arial, sans-serif;background:#0f172a;color:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
   .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px}
   label{font-size:16px;font-weight:bold}
@@ -42,13 +43,13 @@
   #clear{background:#6b7280}
 
   /* History button (center bottom) */
-  #historyBtn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s}
+  #historyBtn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s;z-index:25}
   #historyBtn:hover{background:#334155}
   #historyBtn.flash{background:#22c55e !important;box-shadow:0 0 0 6px rgba(34,197,94,.25)}
   .book{width:18px;height:18px;fill:#8b5a2b}
 
   /* Menu button (bottom-left) */
-  #menuBtn{position:fixed;bottom:20px;left:20px;background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s}
+  #menuBtn{position:fixed;bottom:20px;left:20px;background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s;z-index:25}
   #menuBtn:hover{background:#334155}
   .hamburger{width:18px;height:18px;display:inline-block}
   .hamburger svg{width:18px;height:18px}
@@ -61,7 +62,12 @@
   #menuHeader h3{margin:0;font-size:18px}
   #closeMenu{background:#dc2626;border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}
   #menuContent{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
-  .menu-item{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px;font-size:14px;color:#e2e8f0}
+  .menu-item{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px;font-size:14px;color:#e2e8f0;display:flex;justify-content:space-between;align-items:center}
+  .menu-item button.link{background:#334155;border:1px solid #465368;color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}
+
+  /* Settings button inside menu (bottom-right) */
+  #settingsBtn{position:absolute;right:20px;bottom:20px;background:#0ea5e9;border:1px solid #0891b2;color:#fff;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer}
+  #settingsBtn:hover{background:#0284c7}
 
   /* History panel */
   #historyPanel{position:fixed;bottom:-75%;left:0;width:100%;max-height:75%;background:#1e293b;color:#f8fafc;border-top:2px solid #334155;border-radius:12px 12px 0 0;padding:0;transition:bottom .3s;display:flex;flex-direction:column;z-index:20}
@@ -87,10 +93,10 @@
   .btn-danger{background:#7f1d1d;border-color:#b91c1c}
 
   .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40}
-  .modal{background:#1e293b;border-radius:12px;padding:16px;width:300px}
+  .modal{background:#1e293b;border-radius:12px;padding:16px;width:320px}
   .modal h3{margin:0 0 10px;text-align:center}
   .field{display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-top:8px}
-  .field input{flex:1;background:transparent;border:none;outline:none;color:#f8fafc}
+  .field input, .field select{flex:1;background:transparent;border:none;outline:none;color:#f8fafc}
   .actions{display:flex;gap:10px;margin-top:14px}
   .actions button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
   #discardBtn{background:#6b7280}
@@ -104,6 +110,39 @@
   /* Confirm delete modal */
   #confirmYes{background:#dc2626}
   #confirmNo{background:#6b7280}
+
+  /* Settings modal */
+  #settingsBackdrop .modal{width:360px}
+  .setting-row{display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-top:10px}
+  .setting-row .label{font-size:14px;color:#e2e8f0}
+
+  /* Toggle switch */
+  .switch{position:relative;width:46px;height:26px}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#6b7280;border-radius:999px;transition:.2s}
+  .slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s}
+  input:checked + .slider{background:#22c55e}
+  input:checked + .slider:before{transform:translateX(20px)}
+
+  /* ===== Light theme overrides ===== */
+  body.light{background:#f8fafc;color:#0f172a}
+  body.light .rate-wrap{background:#e5e7eb;border-color:#cbd5e1}
+  body.light input[type="number"]{color:#0f172a}
+  body.light #menuBtn, body.light #historyBtn{background:#e2e8f0;color:#0f172a}
+  body.light #menuBtn:hover, body.light #historyBtn:hover{background:#cbd5e1}
+  body.light #menuPanel{background:#ffffff;border-color:#e5e7eb}
+  body.light #menuHeader{background:#f1f5f9;border-bottom-color:#e5e7eb}
+  body.light #menuContent .menu-item{background:#f8fafc;border-color:#e5e7eb;color:#0f172a}
+  body.light #historyPanel{background:#ffffff;border-top-color:#e5e7eb}
+  body.light #historyHeader{background:#f1f5f9;border-bottom-color:#e5e7eb}
+  body.light .card{background:#f8fafc;border-color:#e5e7eb}
+  body.light #historyList li{background:#f8fafc;border-color:#e5e7eb}
+  body.light .meta{color:#475569}
+  body.light .tag{color:#854d0e;background:#fef3c7;border-color:#f59e0b}
+  body.light .btn-small{background:#e2e8f0;border-color:#cbd5e1;color:#0f172a}
+  body.light .modal{background:#ffffff}
+  body.light .field{background:#f8fafc;border-color:#e5e7eb}
+  body.light input[type="datetime-local"], body.light .field input, body.light .field select{color:#0f172a}
 </style>
 </head>
 <body>
@@ -161,10 +200,12 @@
     <button id="closeMenu">Close</button>
   </div>
   <div id="menuContent">
-    <div class="menu-item">Settings shortcut: adjust your $/hr at the top-left. Riveting, I know.</div>
+    <div class="menu-item">Settings shortcut: adjust your $/hr at the top-left. Riveting, I know. <button class="link" id="settingsRowBtn">Open Settings</button></div>
     <div class="menu-item">Tips: tap Stop to save, then tag your session. History totals update automatically.</div>
     <div class="menu-item">Coming soon: export, themes, and whatever else you dream up at 2 a.m.</div>
   </div>
+  <!-- Settings button inside menu (bottom-right corner) -->
+  <button id="settingsBtn" aria-controls="settingsBackdrop">Settings</button>
 </div>
 
 <div id="historyPanel" aria-hidden="true">
@@ -229,6 +270,44 @@
   </div>
 </div>
 
+<!-- Settings Popup -->
+<div id="settingsBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal">
+    <h3 id="settingsTitle">Settings</h3>
+
+    <div class="setting-row">
+      <div class="label">Theme</div>
+      <div class="field" style="margin:0;">
+        <select id="themeSelect" aria-label="Theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="label">Sound</div>
+      <label class="switch">
+        <input type="checkbox" id="soundToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div class="label">Haptic feedback</div>
+      <label class="switch">
+        <input type="checkbox" id="hapticsToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="actions" style="margin-top:16px;">
+      <button id="settingsClose" style="background:#6b7280;">Close</button>
+      <button id="settingsSave" style="background:#22c55e;">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ====== State ======
   let startTime = 0, elapsed = 0, running = false, interval = null;
@@ -238,9 +317,13 @@
   let editingId = null;
   let pendingDeleteId = null;
 
+  // Preferences
+  let prefs = { theme:'dark', sound:true, haptics:true };
+
   // Storage keys
   const STORE_KEY_STATE = 'earningsTimer_state_v2';
   const STORE_KEY_HISTORY = 'earningsTimer_history_v2';
+  const STORE_KEY_PREFS = 'earningsTimer_prefs_v1';
 
   // ====== Elements ======
   const timeDisplay = document.getElementById('timeDisplay');
@@ -273,13 +356,70 @@
   const confirmYes = document.getElementById('confirmYes');
   const confirmNo = document.getElementById('confirmNo');
 
-  // New: menu elements
+  // New: menu & settings elements
   const menuBtn = document.getElementById('menuBtn');
   const menuPanel = document.getElementById('menuPanel');
   const closeMenu = document.getElementById('closeMenu');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsRowBtn = document.getElementById('settingsRowBtn');
+
+  const settingsBackdrop = document.getElementById('settingsBackdrop');
+  const settingsClose = document.getElementById('settingsClose');
+  const settingsSave = document.getElementById('settingsSave');
+  const themeSelect = document.getElementById('themeSelect');
+  const soundToggle = document.getElementById('soundToggle');
+  const hapticsToggle = document.getElementById('hapticsToggle');
 
   // ====== Helpers ======
-  function vibrate(ms=20){ if (navigator.vibrate) try{ navigator.vibrate(ms); }catch{} }
+  function savePrefs(){
+    try{ localStorage.setItem(STORE_KEY_PREFS, JSON.stringify(prefs)); }catch{}
+  }
+  function loadPrefs(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_PREFS);
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object'){
+        prefs.theme = obj.theme === 'light' ? 'light' : 'dark';
+        prefs.sound = obj.sound !== false;
+        prefs.haptics = obj.haptics !== false;
+      }
+    }catch{}
+  }
+  function applyTheme(){
+    document.body.classList.toggle('light', prefs.theme === 'light');
+  }
+  function updateSettingsUI(){
+    themeSelect.value = prefs.theme;
+    soundToggle.checked = !!prefs.sound;
+    hapticsToggle.checked = !!prefs.haptics;
+  }
+
+  function vibrate(ms=20){
+    if (!prefs.haptics) return;
+    if (navigator.vibrate) { try{ navigator.vibrate(ms); }catch{} }
+  }
+
+  // Tiny pip sound with WebAudio. No loading, no drama.
+  let audioCtx = null;
+  function playSound(freq=880, durMs=70){
+    if (!prefs.sound) return;
+    try{
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.value = 0.0001;
+      o.connect(g); g.connect(audioCtx.destination);
+      const t = audioCtx.currentTime;
+      g.gain.exponentialRampToValueAtTime(0.15, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + durMs/1000);
+      o.start();
+      o.stop(t + durMs/1000 + 0.01);
+    }catch{}
+  }
+
   function fmtMoney(n){ return `$${n.toFixed(2)}`; }
 
   // ✅ Updated to HH:MM:SS.ms
@@ -307,7 +447,7 @@
       rate: parseFloat(rateInput.value)||0,
       lastSaved: Date.now()
     };
-    localStorage.setItem(STORE_KEY_STATE, JSON.stringify(state));
+    try{ localStorage.setItem(STORE_KEY_STATE, JSON.stringify(state)); }catch{}
   }
 
   function loadState(){
@@ -374,6 +514,7 @@
     startInterval();
     saveState();
     vibrate(12);
+    playSound(1200, 80);
   }
 
   function stopTimer(){
@@ -385,19 +526,22 @@
     saveState();
     saveBackdrop.style.display = "flex";
     vibrate(16);
+    playSound(600, 90);
   }
 
   function clearTimer(){
     if (running){
       alert('Stop the timer first to clear the display.');
       vibrate(8);
+      playSound(400, 60);
       return;
     }
     elapsed = 0; startWallTs = null; endWallTs = null;
-    timeDisplay.textContent = "00:00:00.00";  // reset in HH:MM:SS.ms
+    timeDisplay.textContent = "00:00:00.00";
     moneyDisplay.textContent = "$0.00";
     saveState();
     vibrate(10);
+    playSound(500, 60);
   }
 
   function flashHistoryBtn(){
@@ -475,7 +619,7 @@
       history.unshift(entry);
       saveHistoryStore();
       tagInput.value = '';
-      renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20);
+      renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20); playSound(900, 80);
     }
     saveBackdrop.style.display = "none";
     elapsed = 0; startWallTs = null; endWallTs = null;
@@ -501,7 +645,7 @@
     saveHistoryStore();
     editingId = null;
     editBackdrop.style.display = "none";
-    renderHistory(); updateTotals(); vibrate(15);
+    renderHistory(); updateTotals(); vibrate(15); playSound(800, 70);
   }
 
   // ====== Events ======
@@ -519,7 +663,7 @@
     historyPanel.setAttribute('aria-hidden','true');
   };
 
-  discardBtn.onclick = ()=>{ saveBackdrop.style.display = "none"; vibrate(8); };
+  discardBtn.onclick = ()=>{ saveBackdrop.style.display = "none"; vibrate(8); playSound(350, 50); };
   saveBtn.onclick = saveHistory;
 
   editCancel.onclick = ()=>{ editBackdrop.style.display = "none"; editingId=null; };
@@ -530,7 +674,7 @@
     if (pendingDeleteId){
       history = history.filter(h=>String(h.id)!==String(pendingDeleteId));
       saveHistoryStore();
-      renderHistory(); updateTotals(); vibrate(15);
+      renderHistory(); updateTotals(); vibrate(15); playSound(500, 60);
     }
     pendingDeleteId = null;
     confirmBackdrop.style.display = "none";
@@ -548,10 +692,39 @@
   menuBtn.onclick = ()=> toggleMenu();
   closeMenu.onclick = ()=> toggleMenu(false);
 
-  window.addEventListener('beforeunload', saveState);
-  document.addEventListener('visibilitychange', ()=>{ if (document.hidden) saveState(); });
+  // Settings open/close
+  function openSettings(){
+    updateSettingsUI();
+    settingsBackdrop.style.display = 'flex';
+  }
+  settingsBtn.onclick = openSettings;
+  if (settingsRowBtn) settingsRowBtn.onclick = openSettings;
+  settingsClose.onclick = ()=>{ settingsBackdrop.style.display = 'none'; };
+  settingsSave.onclick = ()=>{
+    prefs.theme = themeSelect.value === 'light' ? 'light' : 'dark';
+    prefs.sound = !!soundToggle.checked;
+    prefs.haptics = !!hapticsToggle.checked;
+    applyTheme();
+    savePrefs();
+    settingsBackdrop.style.display = 'none';
+    vibrate(8);
+    playSound(700, 70);
+  };
+
+  // Close settings when clicking backdrop
+  settingsBackdrop.addEventListener('click', (e)=>{
+    if (e.target === settingsBackdrop) settingsBackdrop.style.display = 'none';
+  });
+
+  window.addEventListener('beforeunload', ()=>{
+    saveState();
+    savePrefs();
+  });
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ saveState(); savePrefs(); } });
 
   // ====== Boot ======
+  loadPrefs();
+  applyTheme();
   loadHistoryStore();
   renderHistory(); updateTotals();
   loadState();
