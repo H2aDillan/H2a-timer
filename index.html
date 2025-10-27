@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Earnings Timer — Goals with Live Progress</title>
+<title>Earnings Timer — Full App + Center Stats</title>
 
 <!-- 🔄 Force fresh load (loop-safe). Bump APP_VERSION each release. -->
 <script>
 (function(){
-  const APP_VERSION = "15";   // ← bumped for this release
+  const APP_VERSION = "18";  // ← bumped
   const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
@@ -26,7 +26,7 @@
 </script>
 
 <style>
-  /* ===== Base (Dark) ===== */
+  /* ===== Base ===== */
   body{font-family:Arial, sans-serif;background:#0f172a;color:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
   .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px;z-index:5}
   .rate-wrap{display:flex;align-items:center;gap:8px;background:#374151;border:1px solid #4b5563;border-radius:8px;padding:6px 8px}
@@ -34,8 +34,6 @@
 
   .timer{font-size:3rem;margin-bottom:6px}
   .amount{font-size:3rem;color:#22c55e;margin-bottom:10px}
-
-  /* Break stopwatch + summary */
   .break-timer{font-size:1.15rem;color:#ef4444;margin-bottom:8px;display:none}
   .break-timer.show{display:block}
   .break-summary{font-size:.95rem;color:#eab308;background:#3b3a1b;border:1px solid #534f1a;padding:6px 10px;border-radius:999px;display:none;margin-bottom:10px}
@@ -44,17 +42,22 @@
   .buttons{display:flex;gap:10px;margin-bottom:10px}
   .buttons2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:min(420px,90vw)}
   .buttons2 button{width:100%}
-
   button{background:#2563eb;border:none;color:#fff;padding:12px 24px;border-radius:10px;font-size:16px;cursor:pointer}
-  #start{background:#22c55e} /* Start is green */
+  #start{background:#22c55e}
   #stop{background:#dc2626}
   #clear{background:#6b7280}
 
-  /* History button (center bottom) */
-  #historyBtn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s;z-index:25}
-  #historyBtn:hover{background:#334155}
+  /* Bottom floater buttons */
+  #historyBtn,#statsBtn{position:fixed;bottom:20px;background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s;z-index:25}
+  #historyBtn:hover,#statsBtn:hover{background:#334155}
+  #historyBtn{left:50%;transform:translateX(-50%)}
   #historyBtn.flash{background:#22c55e !important;box-shadow:0 0 0 6px rgba(34,197,94,.25)}
   .book{width:18px;height:18px;fill:#8b5a2b}
+
+  /* Stats button with graph icon + subtle green glow */
+  #statsBtn{right:20px;box-shadow:0 0 12px rgba(34,197,94,.35);border:1px solid rgba(34,197,94,.25)}
+  #statsBtn svg{width:20px;height:20px}
+  #statsBtn path{stroke:#22c55e}
 
   /* Menu button (bottom-left) */
   #menuBtn{position:fixed;bottom:20px;left:20px;background:#1e293b;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s;z-index:25}
@@ -71,26 +74,34 @@
   #menuContent{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
   .menu-item{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px 14px;font-size:15px;color:#e2e8f0;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
   .menu-item .r{opacity:.7}
-
-  /* Settings button inside menu (bottom-right) */
   #settingsBtn{position:absolute;right:20px;bottom:20px;background:#0ea5e9;border:1px solid #0891b2;color:#fff;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer}
   #settingsBtn:hover{background:#0284c7}
 
-  /* Goals full-screen panel */
+  /* Goals full-screen */
   #goalsPanel{position:fixed;inset:0;background:#0b1224;display:none;flex-direction:column;z-index:40}
   #goalsPanel.show{display:flex}
   #goalsHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #334155;background:#0f172a}
   #goalsHeader h3{margin:0;font-size:18px}
   #goalsClose{background:#6b7280;border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
   #goalsBody{padding:12px 16px;display:flex;flex-direction:column;gap:14px;overflow:auto;flex:1}
-
   .goal-card{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px}
   .goal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .goal-title{font-weight:800}
   .goal-values{font-size:13px;color:#94a3b8}
-  .goal-bar{height:14px;background:#1f2937;border:1px solid #334155;border-radius:999px;overflow:hidden}
-  .goal-fill{height:100%;width:0%;background:#22c55e;transition:width .15s linear}
-
+  .goal-bar{height:16px;background:#0b1324;border:1px solid #26324a;border-radius:999px;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.03)}
+  .goal-fill{
+    height:100%;width:0%;
+    background:repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 6px, rgba(255,255,255,0) 6px 12px),linear-gradient(90deg,#16a34a 0%,#22c55e 40%,#86efac 100%);
+    filter:saturate(1.1);
+    box-shadow:0 0 12px rgba(34,197,94,.45),0 0 28px rgba(34,197,94,.25),inset 0 0 8px rgba(255,255,255,.12);
+    transition:width .12s linear;position:relative;will-change:width;animation:stripeShift 2.2s linear infinite;background-size:60px 100%, auto;
+  }
+  @keyframes stripeShift{to{background-position:60px 0,0 0}}
+  .goal-fill::after{content:"";position:absolute;top:-40%;bottom:-40%;width:80px;right:-80px;background:radial-gradient(60px 120px at 0% 50%, rgba(255,255,255,.35), rgba(255,255,255,0) 70%);mix-blend-mode:screen;filter:blur(.5px);animation:shimmer 1.8s ease-in-out infinite}
+  @keyframes shimmer{0%{right:-80px;opacity:0}25%{opacity:.45}50%{right:10px;opacity:.25}75%{opacity:.45}100%{right:-80px;opacity:0}}
+  .goal-fill::before{content:"";position:absolute;right:-6px;top:50%;width:14px;height:14px;transform:translateY(-50%);border-radius:50%;background:radial-gradient(circle at 35% 35%, #ffffff, #bbf7d0 40%, rgba(34,197,94,.85) 65%, rgba(34,197,94,0) 70%);box-shadow:0 0 10px rgba(34,197,94,.9),0 0 22px rgba(34,197,94,.6),0 0 38px rgba(34,197,94,.35)}
+  @keyframes nearDonePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
+  .goal-fill[data-pct="90"],.goal-fill[data-pct="91"],.goal-fill[data-pct="92"],.goal-fill[data-pct="93"],.goal-fill[data-pct="94"],.goal-fill[data-pct="95"],.goal-fill[data-pct="96"],.goal-fill[data-pct="97"],.goal-fill[data-pct="98"],.goal-fill[data-pct="99"],.goal-fill[data-pct="100"]{animation:stripeShift 1.6s linear infinite,nearDonePulse 1.4s ease-in-out infinite}
   .goal-edit{display:flex;align-items:center;gap:8px;margin-top:10px}
   .goal-edit label{font-size:13px;color:#94a3b8}
   .goal-edit input{flex:1;background:#0b1224;border:1px solid #334155;border-radius:8px;padding:8px 10px;color:#f8fafc}
@@ -103,12 +114,10 @@
   #historyHeader .title{display:inline-flex;align-items:center;gap:8px}
   #historyHeader h3{margin:0;font-size:18px}
   #closeHistory{background:#dc2626;border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}
-
   #totals{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px;border-bottom:1px solid #334155}
   .card{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px}
   .card .k{font-size:12px;color:#94a3b8}
   .card .v{font-size:18px;font-weight:800;color:#22c55e}
-
   #historyList{list-style:none;padding:12px 16px;margin:0;overflow-y:auto;flex-grow:1}
   #historyList li{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
   .meta{font-size:13px;color:#94a3b8;margin-bottom:6px}
@@ -119,9 +128,13 @@
   .btn-small{background:#334155;border:1px solid #465368;color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}
   .btn-danger{background:#7f1d1d;border-color:#b91c1c}
   .btn-export{background:#0ea5e9;border-color:#0284c7}
+  .break-highlight{color:#ef4444;font-weight:700}
 
-  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40}
-  .modal{background:#1e293b;border-radius:12px;padding:16px;width:340px}
+  /* Popups shared */
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40;opacity:0;transition:opacity .2s ease}
+  .backdrop.show{display:flex;opacity:1}
+  .modal{background:#1e293b;border-radius:12px;padding:16px;width:340px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.35);transform:scale(.96);opacity:0;transition:transform .2s ease, opacity .2s ease}
+  .backdrop.show .modal{transform:scale(1);opacity:1}
   .modal h3{margin:0 0 10px;text-align:center}
   .field{display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-top:8px}
   .field input, .field select{flex:1;background:transparent;border:none;outline:none;color:#f8fafc}
@@ -129,17 +142,14 @@
   .actions button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
   #discardBtn{background:#6b7280}
   #saveBtn{background:#22c55e}
-
-  /* Confirm delete modal */
+  #editBackdrop .field label{font-size:12px;color:#94a3b8;width:80px}
+  input[type="datetime-local"]{background:transparent;border:none;outline:none;color:#f8fafc}
+  #editCancel{background:#6b7280}
+  #editSave{background:#22c55e}
   #confirmYes{background:#dc2626}
   #confirmNo{background:#6b7280}
-
-  /* Settings modal */
-  #settingsBackdrop .modal{width:360px}
   .setting-row{display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-top:10px}
   .setting-row .label{font-size:14px;color:#e2e8f0}
-
-  /* Toggle switch */
   .switch{position:relative;width:46px;height:26px}
   .switch input{opacity:0;width:0;height:0}
   .slider{position:absolute;cursor:pointer;inset:0;background:#6b7280;border-radius:999px;transition:.2s}
@@ -147,15 +157,19 @@
   input:checked + .slider{background:#22c55e}
   input:checked + .slider:before{transform:translateX(20px)}
 
-  /* Red highlight for “Break” in history */
-  .break-highlight{color:#ef4444;font-weight:700}
+  /* Stats modal specifics */
+  .stat-card{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;margin-top:10px}
+  .stat-title{font-size:14px;color:#94a3b8;margin-bottom:4px}
+  .stat-value{font-size:20px;font-weight:bold;color:#22c55e}
+  .progress-bar{background:#1e293b;border-radius:8px;height:12px;overflow:hidden;margin-top:6px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#16a34a,#22c55e,#86efac);box-shadow:0 0 10px rgba(34,197,94,.6);width:0%;transition:width .25s ease}
 
-  /* ===== Light theme overrides ===== */
+  /* Light theme overrides */
   body.light{background:#f8fafc;color:#0f172a}
   body.light .rate-wrap{background:#e5e7eb;border-color:#cbd5e1}
   body.light input[type="number"]{color:#0f172a}
-  body.light #menuBtn, body.light #historyBtn{background:#e2e8f0;color:#0f172a}
-  body.light #menuBtn:hover, body.light #historyBtn:hover{background:#cbd5e1}
+  body.light #menuBtn, body.light #historyBtn, body.light #statsBtn{background:#e2e8f0;color:#0f172a}
+  body.light #menuBtn:hover, body.light #historyBtn:hover, body.light #statsBtn:hover{background:#cbd5e1}
   body.light #menuPanel{background:#ffffff;border-color:#e5e7eb}
   body.light #menuHeader{background:#f1f5f9;border-bottom-color:#e5e7eb}
   body.light #menuContent .menu-item{background:#f8fafc;border-color:#e5e7eb;color:#0f172a}
@@ -172,6 +186,8 @@
   body.light #goalsPanel{background:#ffffff}
   body.light .goal-card{background:#f8fafc;border-color:#e5e7eb}
   body.light .goal-edit input{background:#ffffff;border-color:#e5e7eb;color:#0f172a}
+  body.light .goal-bar{background:#eef2ff;border-color:#c7d2fe}
+  body.light .goal-fill{box-shadow:0 0 10px rgba(34,197,94,.35),0 0 26px rgba(34,197,94,.2),inset 0 0 6px rgba(255,255,255,.35)}
 </style>
 </head>
 <body>
@@ -217,12 +233,20 @@
   Menu
 </button>
 
-<!-- History button (center bottom) -->
+<!-- History button (bottom-center) -->
 <button id="historyBtn" aria-live="polite">
   <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
   </svg>
   History
+</button>
+
+<!-- Stats button (bottom-right) -->
+<button id="statsBtn" title="View Stats">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 21h16M6 17V9m4 8V5m4 12v-7m4 7V3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  Stats
 </button>
 
 <!-- Slide-in Menu Panel -->
@@ -249,7 +273,7 @@
   <button id="settingsBtn" aria-controls="settingsBackdrop">Settings</button>
 </div>
 
-<!-- Goals full-screen panel -->
+<!-- Goals full-screen -->
 <div id="goalsPanel" aria-hidden="true" role="dialog" aria-labelledby="goalsTitle">
   <div id="goalsHeader">
     <h3 id="goalsTitle">Goals</h3>
@@ -257,55 +281,24 @@
   </div>
   <div id="goalsBody">
     <div class="goal-card">
-      <div class="goal-top">
-        <div class="goal-title">Yearly Target</div>
-        <div class="goal-values" id="yearlyValues">$0 / $0 (0%)</div>
-      </div>
+      <div class="goal-top"><div class="goal-title">Yearly Target</div><div class="goal-values" id="yearlyValues">$0 / $0 (0%)</div></div>
       <div class="goal-bar"><div id="yearlyBar" class="goal-fill"></div></div>
-      <div class="goal-edit">
-        <label for="yearlyInput">Set target</label>
-        <input id="yearlyInput" type="number" min="0" step="0.01" placeholder="e.g. 50000">
-        <button id="yearlySave">Save</button>
-      </div>
+      <div class="goal-edit"><label for="yearlyInput">Set target</label><input id="yearlyInput" type="number" min="0" step="0.01" placeholder="e.g. 50000"><button id="yearlySave">Save</button></div>
     </div>
-
     <div class="goal-card">
-      <div class="goal-top">
-        <div class="goal-title">Monthly Target</div>
-        <div class="goal-values" id="monthlyValues">$0 / $0 (0%)</div>
-      </div>
+      <div class="goal-top"><div class="goal-title">Monthly Target</div><div class="goal-values" id="monthlyValues">$0 / $0 (0%)</div></div>
       <div class="goal-bar"><div id="monthlyBar" class="goal-fill"></div></div>
-      <div class="goal-edit">
-        <label for="monthlyInput">Set target</label>
-        <input id="monthlyInput" type="number" min="0" step="0.01" placeholder="e.g. 4000">
-        <button id="monthlySave">Save</button>
-      </div>
+      <div class="goal-edit"><label for="monthlyInput">Set target</label><input id="monthlyInput" type="number" min="0" step="0.01" placeholder="e.g. 4000"><button id="monthlySave">Save</button></div>
     </div>
-
     <div class="goal-card">
-      <div class="goal-top">
-        <div class="goal-title">Weekly Target</div>
-        <div class="goal-values" id="weeklyValues">$0 / $0 (0%)</div>
-      </div>
+      <div class="goal-top"><div class="goal-title">Weekly Target</div><div class="goal-values" id="weeklyValues">$0 / $0 (0%)</div></div>
       <div class="goal-bar"><div id="weeklyBar" class="goal-fill"></div></div>
-      <div class="goal-edit">
-        <label for="weeklyInput">Set target</label>
-        <input id="weeklyInput" type="number" min="0" step="0.01" placeholder="e.g. 1000">
-        <button id="weeklySave">Save</button>
-      </div>
+      <div class="goal-edit"><label for="weeklyInput">Set target</label><input id="weeklyInput" type="number" min="0" step="0.01" placeholder="e.g. 1000"><button id="weeklySave">Save</button></div>
     </div>
-
     <div class="goal-card">
-      <div class="goal-top">
-        <div class="goal-title">Daily Target</div>
-        <div class="goal-values" id="dailyValues">$0 / $0 (0%)</div>
-      </div>
+      <div class="goal-top"><div class="goal-title">Daily Target</div><div class="goal-values" id="dailyValues">$0 / $0 (0%)</div></div>
       <div class="goal-bar"><div id="dailyBar" class="goal-fill"></div></div>
-      <div class="goal-edit">
-        <label for="dailyInput">Set target</label>
-        <input id="dailyInput" type="number" min="0" step="0.01" placeholder="e.g. 200">
-        <button id="dailySave">Save</button>
-      </div>
+      <div class="goal-edit"><label for="dailyInput">Set target</label><input id="dailyInput" type="number" min="0" step="0.01" placeholder="e.g. 200"><button id="dailySave">Save</button></div>
     </div>
   </div>
 </div>
@@ -334,14 +327,8 @@
 <div id="saveBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
   <div class="modal">
     <h3 id="saveTitle">Save this session?</h3>
-    <div class="field">
-      <span style="font-size:14px;color:#94a3b8;">Tag</span>
-      <input id="tagInput" type="text" placeholder="Optional tag">
-    </div>
-    <div class="actions">
-      <button id="discardBtn">No</button>
-      <button id="saveBtn">Yes, Save</button>
-    </div>
+    <div class="field"><span style="font-size:14px;color:#94a3b8;">Tag</span><input id="tagInput" type="text" placeholder="Optional tag"></div>
+    <div class="actions"><button id="discardBtn">No</button><button id="saveBtn">Yes, Save</button></div>
   </div>
 </div>
 
@@ -351,14 +338,8 @@
     <h3 id="editTitle">Edit entry</h3>
     <div class="field"><label>Start</label><input id="editStart" type="datetime-local"></div>
     <div class="field"><label>End</label><input id="editEnd" type="datetime-local"></div>
-    <div class="field">
-      <span style="font-size:14px;color:#94a3b8;">Tag</span>
-      <input id="editTag" type="text" placeholder="Edit tag">
-    </div>
-    <div class="actions">
-      <button id="editCancel">Cancel</button>
-      <button id="editSave">Save changes</button>
-    </div>
+    <div class="field"><span style="font-size:14px;color:#94a3b8;">Tag</span><input id="editTag" type="text" placeholder="Edit tag"></div>
+    <div class="actions"><button id="editCancel">Cancel</button><button id="editSave">Save changes</button></div>
   </div>
 </div>
 
@@ -366,10 +347,7 @@
 <div id="confirmBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
   <div class="modal">
     <h3 id="confirmTitle">Delete this entry?</h3>
-    <div class="actions">
-      <button id="confirmNo">No</button>
-      <button id="confirmYes">Yes</button>
-    </div>
+    <div class="actions"><button id="confirmNo">No</button><button id="confirmYes">Yes</button></div>
   </div>
 </div>
 
@@ -377,37 +355,10 @@
 <div id="settingsBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
   <div class="modal">
     <h3 id="settingsTitle">Settings</h3>
-
-    <div class="setting-row">
-      <div class="label">Theme</div>
-      <div class="field" style="margin:0;">
-        <select id="themeSelect" aria-label="Theme">
-          <option value="dark">Dark</option>
-          <option value="light">Light</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="setting-row">
-      <div class="label">Sound</div>
-      <label class="switch">
-        <input type="checkbox" id="soundToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="setting-row">
-      <div class="label">Haptic feedback</div>
-      <label class="switch">
-        <input type="checkbox" id="hapticsToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="actions" style="margin-top:16px;">
-      <button id="settingsClose" style="background:#6b7280;">Close</button>
-      <button id="settingsSave" style="background:#22c55e;">Save</button>
-    </div>
+    <div class="setting-row"><div class="label">Theme</div><div class="field" style="margin:0;"><select id="themeSelect" aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select></div></div>
+    <div class="setting-row"><div class="label">Sound</div><label class="switch"><input type="checkbox" id="soundToggle"><span class="slider"></span></label></div>
+    <div class="setting-row"><div class="label">Haptic feedback</div><label class="switch"><input type="checkbox" id="hapticsToggle"><span class="slider"></span></label></div>
+    <div class="actions" style="margin-top:16px;"><button id="settingsClose" style="background:#6b7280;">Close</button><button id="settingsSave" style="background:#22c55e;">Save</button></div>
   </div>
 </div>
 
@@ -416,10 +367,7 @@
   <div class="modal">
     <h3 id="startAtTitle">Start At</h3>
     <div class="field"><label style="width:90px;color:#94a3b8">Date/Time</label><input id="startAtInput" type="datetime-local"></div>
-    <div class="actions">
-      <button id="startAtCancel" style="background:#6b7280;">Cancel</button>
-      <button id="startAtSave" style="background:#22c55e;">Set</button>
-    </div>
+    <div class="actions"><button id="startAtCancel" style="background:#6b7280;">Cancel</button><button id="startAtSave" style="background:#22c55e;">Set</button></div>
   </div>
 </div>
 
@@ -427,10 +375,7 @@
   <div class="modal">
     <h3 id="stopAtTitle">Stop At</h3>
     <div class="field"><label style="width:90px;color:#94a3b8">Date/Time</label><input id="stopAtInput" type="datetime-local"></div>
-    <div class="actions">
-      <button id="stopAtCancel" style="background:#6b7280;">Cancel</button>
-      <button id="stopAtSave" style="background:#22c55e;">Set</button>
-    </div>
+    <div class="actions"><button id="stopAtCancel" style="background:#6b7280;">Cancel</button><button id="stopAtSave" style="background:#22c55e;">Set</button></div>
   </div>
 </div>
 
@@ -439,9 +384,30 @@
   <div class="modal">
     <h3 id="exportTitle">Export</h3>
     <p style="text-align:center;margin:8px 0 0;">Coming soon.</p>
-    <div class="actions" style="margin-top:12px;">
-      <button id="exportClose" style="background:#22c55e;">OK</button>
+    <div class="actions" style="margin-top:12px;"><button id="exportClose" style="background:#22c55e;">OK</button></div>
+  </div>
+</div>
+
+<!-- ===== Center Stats Modal (fade-in) ===== -->
+<div id="statsBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+  <div class="modal" style="width:380px;max-width:92vw">
+    <h3 id="statsTitle">Stats</h3>
+    <div class="stat-card">
+      <div class="stat-title">Today</div>
+      <div class="stat-value" id="todayEarned">$0.00</div>
+      <div class="progress-bar"><div id="todayBar" class="progress-fill"></div></div>
     </div>
+    <div class="stat-card">
+      <div class="stat-title">This Week</div>
+      <div class="stat-value" id="weekEarned">$0.00</div>
+      <div class="progress-bar"><div id="weekBar" class="progress-fill"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">This Month</div>
+      <div class="stat-value" id="monthEarned">$0.00</div>
+      <div class="progress-bar"><div id="monthBar" class="progress-fill"></div></div>
+    </div>
+    <div class="actions" style="margin-top:16px;"><button id="statsClose" style="background:#22c55e;">Close</button></div>
   </div>
 </div>
 
@@ -459,12 +425,10 @@
   let scheduledStartTs = null;
   let scheduledStopTs = null;
 
-  // Break stopwatch (count-up)
+  // Break stopwatch
   let onBreak = false;
   let breakStartTs = null;
   let breakTicker = null;
-
-  // Session break accumulator
   let sessionBreakMs = 0;
 
   // Preferences
@@ -518,7 +482,6 @@
   const confirmYes = document.getElementById('confirmYes');
   const confirmNo  = document.getElementById('confirmNo');
 
-  // Menu & settings
   const menuBtn = document.getElementById('menuBtn');
   const menuPanel = document.getElementById('menuPanel');
   const closeMenu = document.getElementById('closeMenu');
@@ -549,30 +512,38 @@
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportClose = document.getElementById('exportClose');
 
-  // Goals UI
+  // Goals
   const goalsPanel   = document.getElementById('goalsPanel');
   const goalsClose   = document.getElementById('goalsClose');
   const yearlyValues = document.getElementById('yearlyValues');
   const monthlyValues= document.getElementById('monthlyValues');
   const weeklyValues = document.getElementById('weeklyValues');
   const dailyValues  = document.getElementById('dailyValues');
-
   const yearlyBar = document.getElementById('yearlyBar');
   const monthlyBar= document.getElementById('monthlyBar');
   const weeklyBar = document.getElementById('weeklyBar');
   const dailyBar  = document.getElementById('dailyBar');
-
   const yearlyInput = document.getElementById('yearlyInput');
   const monthlyInput= document.getElementById('monthlyInput');
   const weeklyInput = document.getElementById('weeklyInput');
   const dailyInput  = document.getElementById('dailyInput');
-
   const yearlySave = document.getElementById('yearlySave');
   const monthlySave= document.getElementById('monthlySave');
   const weeklySave = document.getElementById('weeklySave');
   const dailySave  = document.getElementById('dailySave');
 
-  // ====== Helpers ======
+  // Stats modal
+  const statsBtn = document.getElementById('statsBtn');
+  const statsBackdrop = document.getElementById('statsBackdrop');
+  const statsClose = document.getElementById('statsClose');
+  const todayEarned = document.getElementById('todayEarned');
+  const weekEarned = document.getElementById('weekEarned');
+  const monthEarned = document.getElementById('monthEarned');
+  const todayBar = document.getElementById('todayBar');
+  const weekBar = document.getElementById('weekBar');
+  const monthBar = document.getElementById('monthBar');
+
+  // ===== Helpers =====
   const pad2 = n => String(n).padStart(2,'0');
   function fmtMoney(n){ return `$${(n||0).toFixed(2)}`; }
   function formatMain(ms){
@@ -608,7 +579,7 @@
     }catch{}
   }
 
-  // ====== Persistence ======
+  // ===== Persistence =====
   function savePrefs(){ try{ localStorage.setItem(STORE_KEY_PREFS, JSON.stringify(prefs)); }catch{} }
   function loadPrefs(){
     try{
@@ -632,10 +603,8 @@
       goals.daily   = +g.daily   || 0;
     }catch{}
   }
-
   function applyTheme(){ document.body.classList.toggle('light', prefs.theme === 'light'); }
 
-  // ====== History store ======
   function saveHistoryStore(){ try{ localStorage.setItem(STORE_KEY_HISTORY, JSON.stringify(history)); }catch(e){} }
   function loadHistoryStore(){
     try{
@@ -646,14 +615,13 @@
     }catch(e){}
   }
 
-  // ====== Update Loop & UI ======
+  // ===== App update loop =====
   function update(){
     const now = Date.now();
 
     // scheduled start/stop
     if (scheduledStartTs && now >= scheduledStartTs && !running && !onBreak){
-      scheduledStartTs = null;
-      startTimer();
+      scheduledStartTs = null; startTimer();
     }
     if (scheduledStopTs && now >= scheduledStopTs && running){
       finalizeActiveBreak();
@@ -662,7 +630,7 @@
       clearInterval(interval); interval = null;
       endWallTs = now;
       saveState();
-      saveBackdrop.style.display = "flex";
+      saveBackdrop.classList.add('show');
       vibrate(16); playSound(600, 90);
     }
 
@@ -704,7 +672,6 @@
       if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
       breakDisplay.classList.remove('show');
     }
-    // We clear the small badge when stopping; goals view uses sums anyway
   }
 
   function stopTimer(){
@@ -714,7 +681,7 @@
     clearInterval(interval); interval = null;
     endWallTs = Date.now();
     saveState();
-    saveBackdrop.style.display = "flex";
+    saveBackdrop.classList.add('show');
     vibrate(16); playSound(600, 90);
   }
 
@@ -738,7 +705,6 @@
   function flashHistoryBtn(){ historyBtn.classList.add('flash'); setTimeout(()=>historyBtn.classList.remove('flash'), 1000); }
 
   function sumRangeSince(rangeStart){
-    // Sum history by endTs in range (consistent with the app elsewhere), plus current-session contribution since the range start.
     const rate = parseFloat(rateInput.value)||0;
     const now = Date.now();
     let total = history.filter(h=>h.endTs>=rangeStart).reduce((a,b)=>a+(b.amount||0),0);
@@ -793,7 +759,7 @@
     historyList.querySelectorAll('[data-del]').forEach(btn=>{
       btn.onclick = ()=>{
         pendingDeleteId = btn.getAttribute('data-del');
-        confirmBackdrop.style.display = "flex";
+        confirmBackdrop.classList.add('show');
       };
     });
 
@@ -806,12 +772,12 @@
         editStart.value = toLocalInput(entry.startTs);
         editEnd.value = toLocalInput(entry.endTs);
         editTag.value = entry.tag || '';
-        editBackdrop.style.display = "flex";
+        editBackdrop.classList.add('show');
       };
     });
 
     historyList.querySelectorAll('[data-export]').forEach(btn=>{
-      btn.onclick = ()=>{ exportBackdrop.style.display = 'flex'; };
+      btn.onclick = ()=>{ exportBackdrop.classList.add('show'); };
     });
   }
 
@@ -840,7 +806,7 @@
     }
 
     // Reset for next session
-    saveBackdrop.style.display = "none";
+    saveBackdrop.classList.remove('show');
     elapsed = 0; startWallTs = null; endWallTs = null;
     sessionBreakMs = 0;
     if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
@@ -867,7 +833,7 @@
 
     saveHistoryStore();
     editingId = null;
-    editBackdrop.style.display = "none";
+    editBackdrop.classList.remove('show');
     renderHistory(); updateTotals(); vibrate(15); playSound(800, 70);
   }
 
@@ -883,18 +849,9 @@
     }, 250);
   }
 
-  // ===== Menu open/close =====
-  function toggleMenu(forceOpen){
-    const willOpen = typeof forceOpen === 'boolean' ? forceOpen : !menuPanel.classList.contains('show');
-    menuPanel.classList.toggle('show', willOpen);
-    menuPanel.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
-    menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-  }
-
   // ===== Goals screen =====
   let goalsRAF = null;
   function openGoals(){
-    // Preload inputs with saved values
     yearlyInput.value  = goals.yearly  ? String(goals.yearly)  : '';
     monthlyInput.value = goals.monthly ? String(goals.monthly) : '';
     weeklyInput.value  = goals.weekly  ? String(goals.weekly)  : '';
@@ -903,7 +860,6 @@
     goalsPanel.classList.add('show');
     goalsPanel.setAttribute('aria-hidden','false');
 
-    // Start live animation loop
     const tick = ()=>{
       renderGoalBars();
       goalsRAF = requestAnimationFrame(tick);
@@ -915,9 +871,7 @@
     goalsPanel.setAttribute('aria-hidden','true');
     if (goalsRAF){ cancelAnimationFrame(goalsRAF); goalsRAF = null; }
   }
-
   function clampPct(n){ return Math.max(0, Math.min(100, n)); }
-
   function renderGoalBars(){
     const now = Date.now();
     const year0  = startOfYear(now);
@@ -940,10 +894,10 @@
     const wPct = wT ? clampPct((wVal / wT) * 100) : 0;
     const dPct = dT ? clampPct((dVal / dT) * 100) : 0;
 
-    yearlyBar.style.width  = `${yPct}%`;
-    monthlyBar.style.width = `${mPct}%`;
-    weeklyBar.style.width  = `${wPct}%`;
-    dailyBar.style.width   = `${dPct}%`;
+    yearlyBar.style.width  = `${yPct}%`;  yearlyBar.dataset.pct  = String(Math.floor(yPct));
+    monthlyBar.style.width = `${mPct}%`;  monthlyBar.dataset.pct = String(Math.floor(mPct));
+    weeklyBar.style.width  = `${wPct}%`;  weeklyBar.dataset.pct  = String(Math.floor(wPct));
+    dailyBar.style.width   = `${dPct}%`;  dailyBar.dataset.pct   = String(Math.floor(dPct));
 
     yearlyValues.textContent  = `${fmtMoney(yVal)} / ${fmtMoney(yT)} (${Math.floor(yPct)}%)`;
     monthlyValues.textContent = `${fmtMoney(mVal)} / ${fmtMoney(mT)} (${Math.floor(mPct)}%)`;
@@ -951,9 +905,33 @@
     dailyValues.textContent   = `${fmtMoney(dVal)} / ${fmtMoney(dT)} (${Math.floor(dPct)}%)`;
   }
 
-  // ====== Events ======
-  // Export
-  document.getElementById('exportClose').onclick = ()=>{ exportBackdrop.style.display = 'none'; };
+  // ===== Stats modal logic (center fade-in) =====
+  function openStats(){
+    updateStatsUI();
+    statsBackdrop.classList.add('show');
+  }
+  function closeStats(){
+    statsBackdrop.classList.remove('show');
+  }
+  function pct(val, target){ return !target ? 0 : Math.max(0, Math.min(100, (val/target)*100)); }
+  function updateStatsUI(){
+    const now = Date.now();
+    const d0 = startOfDay(now), w0 = startOfWeek(now), m0 = startOfMonth(now);
+    const todayVal = sumRangeSince(d0);
+    const weekVal  = sumRangeSince(w0);
+    const monthVal = sumRangeSince(m0);
+
+    todayEarned.textContent = fmtMoney(todayVal);
+    weekEarned.textContent  = fmtMoney(weekVal);
+    monthEarned.textContent = fmtMoney(monthVal);
+
+    todayBar.style.width = `${pct(todayVal, goals.daily||0)}%`;
+    weekBar.style.width  = `${pct(weekVal,  goals.weekly||0)}%`;
+    monthBar.style.width = `${pct(monthVal, goals.monthly||0)}%`;
+  }
+
+  // ===== Events =====
+  document.getElementById('exportClose').onclick = ()=>{ exportBackdrop.classList.remove('show'); };
 
   // Core buttons
   startBtn.onclick = startTimer;
@@ -963,6 +941,12 @@
   // Menu
   menuBtn.onclick = ()=> toggleMenu();
   closeMenu.onclick = ()=> toggleMenu(false);
+  function toggleMenu(forceOpen){
+    const willOpen = typeof forceOpen === 'boolean' ? forceOpen : !menuPanel.classList.contains('show');
+    menuPanel.classList.toggle('show', willOpen);
+    menuPanel.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+    menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  }
 
   // Menu options
   menuGoals.onclick    = ()=>{ toggleMenu(false); openGoals(); };
@@ -972,12 +956,10 @@
 
   // Goals actions
   goalsClose.onclick = closeGoals;
-  [goalsPanel].forEach(el=> el.addEventListener('click', e=>{ /* no outside click to close for full-screen */ }));
-
-  yearlySave.onclick = ()=>{ goals.yearly  = Math.max(0, +yearlyInput.value || 0); saveGoals(); vibrate(8); };
-  monthlySave.onclick= ()=>{ goals.monthly = Math.max(0, +monthlyInput.value|| 0); saveGoals(); vibrate(8); };
-  weeklySave.onclick = ()=>{ goals.weekly  = Math.max(0, +weeklyInput.value || 0); saveGoals(); vibrate(8); };
-  dailySave.onclick  = ()=>{ goals.daily   = Math.max(0, +dailyInput.value  || 0); saveGoals(); vibrate(8); };
+  yearlySave.onclick = ()=>{ goals.yearly  = Math.max(0, +yearlyInput.value  || 0); saveGoals(); vibrate(8); };
+  monthlySave.onclick= ()=>{ goals.monthly = Math.max(0, +monthlyInput.value || 0); saveGoals(); vibrate(8); };
+  weeklySave.onclick = ()=>{ goals.weekly  = Math.max(0, +weeklyInput.value  || 0); saveGoals(); vibrate(8); };
+  dailySave.onclick  = ()=>{ goals.daily   = Math.max(0, +dailyInput.value   || 0); saveGoals(); vibrate(8); };
 
   // History panel
   historyBtn.onclick = ()=>{
@@ -991,15 +973,15 @@
   };
 
   // Save dialog
-  discardBtn.onclick = ()=>{ saveBackdrop.style.display = "none"; vibrate(8); playSound(350, 50); };
+  discardBtn.onclick = ()=>{ saveBackdrop.classList.remove('show'); vibrate(8); playSound(350, 50); };
   saveBtn.onclick = saveHistory;
 
   // Edit dialog
-  editCancel.onclick = ()=>{ editBackdrop.style.display = "none"; editingId=null; };
+  editCancel.onclick = ()=>{ editBackdrop.classList.remove('show'); editingId=null; };
   editSave.onclick = applyEdit;
 
   // Delete dialog
-  confirmNo.onclick = ()=>{ confirmBackdrop.style.display = "none"; pendingDeleteId=null; };
+  confirmNo.onclick = ()=>{ confirmBackdrop.classList.remove('show'); pendingDeleteId=null; };
   confirmYes.onclick = ()=>{
     if (pendingDeleteId){
       history = history.filter(h=>String(h.id)!==String(pendingDeleteId));
@@ -1007,26 +989,26 @@
       renderHistory(); updateTotals(); vibrate(15); playSound(500, 60);
     }
     pendingDeleteId = null;
-    confirmBackdrop.style.display = "none";
+    confirmBackdrop.classList.remove('show');
   };
 
   // Settings
-  function openSettings(){ themeSelect.value=prefs.theme; soundToggle.checked=prefs.sound; hapticsToggle.checked=prefs.haptics; settingsBackdrop.style.display='flex'; }
+  function openSettings(){ themeSelect.value=prefs.theme; soundToggle.checked=prefs.sound; hapticsToggle.checked=prefs.haptics; settingsBackdrop.classList.add('show'); }
   settingsBtn.onclick = openSettings;
-  settingsClose.onclick = ()=>{ settingsBackdrop.style.display='none'; };
+  settingsClose.onclick = ()=>{ settingsBackdrop.classList.remove('show'); };
   settingsSave.onclick = ()=>{
     prefs.theme = themeSelect.value === 'light' ? 'light' : 'dark';
     prefs.sound = !!soundToggle.checked;
     prefs.haptics = !!hapticsToggle.checked;
     applyTheme(); savePrefs();
-    settingsBackdrop.style.display = 'none';
+    settingsBackdrop.classList.remove('show');
     vibrate(8); playSound(700, 70);
   };
-  settingsBackdrop.addEventListener('click', (e)=>{ if (e.target===settingsBackdrop) settingsBackdrop.style.display='none'; });
+  settingsBackdrop.addEventListener('click', (e)=>{ if (e.target===settingsBackdrop) settingsBackdrop.classList.remove('show'); });
 
   // Start/Stop At
-  startAtBtn.onclick = ()=>{ startAtInput.value = toLocalInput(Date.now()); startAtBackdrop.style.display = 'flex'; };
-  startAtCancel.onclick = ()=>{ startAtBackdrop.style.display = 'none'; };
+  startAtBtn.onclick = ()=>{ startAtInput.value = toLocalInput(Date.now()); startAtBackdrop.classList.add('show'); };
+  startAtCancel.onclick = ()=>{ startAtBackdrop.classList.remove('show'); };
   startAtSave.onclick = ()=>{
     const val = startAtInput.value; if (!val){ alert('Pick a valid date/time.'); return; }
     const ts = fromLocalInput(val); const now = Date.now();
@@ -1039,11 +1021,11 @@
       if (interval){ clearInterval(interval); interval=null; } updateDisplays(0);
       vibrate(8); playSound(900, 70); saveState();
     }
-    startAtBackdrop.style.display = 'none';
+    startAtBackdrop.classList.remove('show');
   };
 
-  stopAtBtn.onclick = ()=>{ stopAtInput.value = toLocalInput(Date.now()); stopAtBackdrop.style.display = 'flex'; };
-  stopAtCancel.onclick = ()=>{ stopAtBackdrop.style.display = 'none'; };
+  stopAtBtn.onclick = ()=>{ stopAtInput.value = toLocalInput(Date.now()); stopAtBackdrop.classList.add('show'); };
+  stopAtCancel.onclick = ()=>{ stopAtBackdrop.classList.remove('show'); };
   stopAtSave.onclick = ()=>{
     const val = stopAtInput.value; if (!val){ alert('Pick a valid date/time.'); return; }
     if (!startWallTs){ alert('No active session to stop.'); return; }
@@ -1052,12 +1034,12 @@
       finalizeActiveBreak();
       running = false; if (interval){ clearInterval(interval); interval=null; }
       endWallTs = ts; elapsed = Math.max(0, endWallTs - startWallTs); updateDisplays(elapsed);
-      saveState(); saveBackdrop.style.display = 'flex'; vibrate(16); playSound(600, 90);
+      saveState(); saveBackdrop.classList.add('show'); vibrate(16); playSound(600, 90);
       scheduledStopTs = null;
     } else {
       scheduledStopTs = ts; vibrate(8); playSound(800, 70); saveState();
     }
-    stopAtBackdrop.style.display = 'none';
+    stopAtBackdrop.classList.remove('show');
   };
 
   // Break flow
@@ -1088,9 +1070,14 @@
     vibrate(14); playSound(900, 80);
   };
 
+  // Stats open/close
+  statsBtn.onclick = openStats;
+  statsClose.onclick = closeStats;
+  statsBackdrop.addEventListener('click',(e)=>{ if (e.target===statsBackdrop) closeStats(); });
+
   // Close misc popups on outside click
-  [startAtBackdrop, stopAtBackdrop, exportBackdrop].forEach(el=>{
-    el.addEventListener('click', (e)=>{ if (e.target===el) el.style.display='none'; });
+  [startAtBackdrop, stopAtBackdrop, exportBackdrop, confirmBackdrop, editBackdrop, saveBackdrop].forEach(el=>{
+    el.addEventListener('click', (e)=>{ if (e.target===el) el.classList.remove('show'); });
   });
 
   window.addEventListener('beforeunload', ()=>{ saveState(); savePrefs(); saveGoals(); });
