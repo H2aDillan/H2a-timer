@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Earnings Timer — History Highlight + Export Stub</title>
+<title>Earnings Timer — Goals with Live Progress</title>
 
 <!-- 🔄 Force fresh load (loop-safe). Bump APP_VERSION each release. -->
 <script>
 (function(){
-  const APP_VERSION = "14";   // ← bumped for this release
+  const APP_VERSION = "15";   // ← bumped for this release
   const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
@@ -28,7 +28,7 @@
 <style>
   /* ===== Base (Dark) ===== */
   body{font-family:Arial, sans-serif;background:#0f172a;color:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
-  .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px}
+  .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px;z-index:5}
   .rate-wrap{display:flex;align-items:center;gap:8px;background:#374151;border:1px solid #4b5563;border-radius:8px;padding:6px 8px}
   input[type="number"]{width:110px;padding:6px 6px;border:none;outline:none;font-size:16px;text-align:right;background:transparent;color:#f8fafc}
 
@@ -62,7 +62,7 @@
   .hamburger svg{width:18px;height:18px}
 
   /* Menu side panel */
-  #menuPanel{position:fixed;top:0;left:-75%;width:75%;height:100%;background:#1e293b;border-right:2px solid #334155;border-radius:0 12px 12px 0;transition:left .3s;display:flex;flex-direction:column;z-index:30}
+  #menuPanel{position:fixed;top:0;left:-75%;width:75%;height:100%;max-width:420px;background:#1e293b;border-right:2px solid #334155;border-radius:0 12px 12px 0;transition:left .3s;display:flex;flex-direction:column;z-index:30}
   #menuPanel.show{left:0}
   #menuHeader{background:#0f172a;padding:12px 16px;border-radius:0 12px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #334155}
   #menuHeader .title{display:inline-flex;align-items:center;gap:8px}
@@ -75,6 +75,26 @@
   /* Settings button inside menu (bottom-right) */
   #settingsBtn{position:absolute;right:20px;bottom:20px;background:#0ea5e9;border:1px solid #0891b2;color:#fff;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer}
   #settingsBtn:hover{background:#0284c7}
+
+  /* Goals full-screen panel */
+  #goalsPanel{position:fixed;inset:0;background:#0b1224;display:none;flex-direction:column;z-index:40}
+  #goalsPanel.show{display:flex}
+  #goalsHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #334155;background:#0f172a}
+  #goalsHeader h3{margin:0;font-size:18px}
+  #goalsClose{background:#6b7280;border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
+  #goalsBody{padding:12px 16px;display:flex;flex-direction:column;gap:14px;overflow:auto;flex:1}
+
+  .goal-card{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px}
+  .goal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .goal-title{font-weight:800}
+  .goal-values{font-size:13px;color:#94a3b8}
+  .goal-bar{height:14px;background:#1f2937;border:1px solid #334155;border-radius:999px;overflow:hidden}
+  .goal-fill{height:100%;width:0%;background:#22c55e;transition:width .15s linear}
+
+  .goal-edit{display:flex;align-items:center;gap:8px;margin-top:10px}
+  .goal-edit label{font-size:13px;color:#94a3b8}
+  .goal-edit input{flex:1;background:#0b1224;border:1px solid #334155;border-radius:8px;padding:8px 10px;color:#f8fafc}
+  .goal-edit button{background:#22c55e;border:none;color:#0b1224;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
 
   /* History panel */
   #historyPanel{position:fixed;bottom:-75%;left:0;width:100%;max-height:75%;background:#1e293b;color:#f8fafc;border-top:2px solid #334155;border-radius:12px 12px 0 0;padding:0;transition:bottom .3s;display:flex;flex-direction:column;z-index:20}
@@ -98,8 +118,6 @@
   .row-actions{display:flex;flex-direction:column;gap:6px}
   .btn-small{background:#334155;border:1px solid #465368;color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}
   .btn-danger{background:#7f1d1d;border-color:#b91c1c}
-
-  /* Export button style */
   .btn-export{background:#0ea5e9;border-color:#0284c7}
 
   .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40}
@@ -111,11 +129,6 @@
   .actions button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
   #discardBtn{background:#6b7280}
   #saveBtn{background:#22c55e}
-
-  #editBackdrop .field label{font-size:12px;color:#94a3b8;width:80px}
-  input[type="datetime-local"]{background:transparent;border:none;outline:none;color:#f8fafc}
-  #editCancel{background:#6b7280}
-  #editSave{background:#22c55e}
 
   /* Confirm delete modal */
   #confirmYes{background:#dc2626}
@@ -134,7 +147,7 @@
   input:checked + .slider{background:#22c55e}
   input:checked + .slider:before{transform:translateX(20px)}
 
-  /* Red highlight for the word “Break” in history */
+  /* Red highlight for “Break” in history */
   .break-highlight{color:#ef4444;font-weight:700}
 
   /* ===== Light theme overrides ===== */
@@ -156,6 +169,9 @@
   body.light .modal{background:#ffffff}
   body.light .field{background:#f8fafc;border-color:#e5e7eb}
   body.light input[type="datetime-local"], body.light .field input, body.light .field select{color:#0f172a}
+  body.light #goalsPanel{background:#ffffff}
+  body.light .goal-card{background:#f8fafc;border-color:#e5e7eb}
+  body.light .goal-edit input{background:#ffffff;border-color:#e5e7eb;color:#0f172a}
 </style>
 </head>
 <body>
@@ -201,7 +217,7 @@
   Menu
 </button>
 
-<!-- History button (bottom-center) -->
+<!-- History button (center bottom) -->
 <button id="historyBtn" aria-live="polite">
   <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
@@ -231,6 +247,67 @@
     <div class="menu-item" id="menuExpenses"><span>Expenses</span><span class="r">›</span></div>
   </div>
   <button id="settingsBtn" aria-controls="settingsBackdrop">Settings</button>
+</div>
+
+<!-- Goals full-screen panel -->
+<div id="goalsPanel" aria-hidden="true" role="dialog" aria-labelledby="goalsTitle">
+  <div id="goalsHeader">
+    <h3 id="goalsTitle">Goals</h3>
+    <button id="goalsClose">Back</button>
+  </div>
+  <div id="goalsBody">
+    <div class="goal-card">
+      <div class="goal-top">
+        <div class="goal-title">Yearly Target</div>
+        <div class="goal-values" id="yearlyValues">$0 / $0 (0%)</div>
+      </div>
+      <div class="goal-bar"><div id="yearlyBar" class="goal-fill"></div></div>
+      <div class="goal-edit">
+        <label for="yearlyInput">Set target</label>
+        <input id="yearlyInput" type="number" min="0" step="0.01" placeholder="e.g. 50000">
+        <button id="yearlySave">Save</button>
+      </div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-top">
+        <div class="goal-title">Monthly Target</div>
+        <div class="goal-values" id="monthlyValues">$0 / $0 (0%)</div>
+      </div>
+      <div class="goal-bar"><div id="monthlyBar" class="goal-fill"></div></div>
+      <div class="goal-edit">
+        <label for="monthlyInput">Set target</label>
+        <input id="monthlyInput" type="number" min="0" step="0.01" placeholder="e.g. 4000">
+        <button id="monthlySave">Save</button>
+      </div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-top">
+        <div class="goal-title">Weekly Target</div>
+        <div class="goal-values" id="weeklyValues">$0 / $0 (0%)</div>
+      </div>
+      <div class="goal-bar"><div id="weeklyBar" class="goal-fill"></div></div>
+      <div class="goal-edit">
+        <label for="weeklyInput">Set target</label>
+        <input id="weeklyInput" type="number" min="0" step="0.01" placeholder="e.g. 1000">
+        <button id="weeklySave">Save</button>
+      </div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-top">
+        <div class="goal-title">Daily Target</div>
+        <div class="goal-values" id="dailyValues">$0 / $0 (0%)</div>
+      </div>
+      <div class="goal-bar"><div id="dailyBar" class="goal-fill"></div></div>
+      <div class="goal-edit">
+        <label for="dailyInput">Set target</label>
+        <input id="dailyInput" type="number" min="0" step="0.01" placeholder="e.g. 200">
+        <button id="dailySave">Save</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- History panel -->
@@ -387,20 +464,20 @@
   let breakStartTs = null;
   let breakTicker = null;
 
-  // Session break accumulator (saves to history, clears on Stop)
+  // Session break accumulator
   let sessionBreakMs = 0;
-
-  // Legacy badge fields (kept though we show session badge only)
-  let lastBreakDurationMs = null;
-  let lastBreakDateStr = null;
 
   // Preferences
   let prefs = { theme:'dark', sound:true, haptics:true };
+
+  // Goals
+  let goals = { yearly:0, monthly:0, weekly:0, daily:0 };
 
   // Storage keys
   const STORE_KEY_STATE   = 'earningsTimer_state_v7';
   const STORE_KEY_HISTORY = 'earningsTimer_history_v2';
   const STORE_KEY_PREFS   = 'earningsTimer_prefs_v1';
+  const STORE_KEY_GOALS   = 'earningsTimer_goals_v1';
 
   // ====== Elements ======
   const timeDisplay   = document.getElementById('timeDisplay');
@@ -472,25 +549,32 @@
   const exportBackdrop = document.getElementById('exportBackdrop');
   const exportClose = document.getElementById('exportClose');
 
+  // Goals UI
+  const goalsPanel   = document.getElementById('goalsPanel');
+  const goalsClose   = document.getElementById('goalsClose');
+  const yearlyValues = document.getElementById('yearlyValues');
+  const monthlyValues= document.getElementById('monthlyValues');
+  const weeklyValues = document.getElementById('weeklyValues');
+  const dailyValues  = document.getElementById('dailyValues');
+
+  const yearlyBar = document.getElementById('yearlyBar');
+  const monthlyBar= document.getElementById('monthlyBar');
+  const weeklyBar = document.getElementById('weeklyBar');
+  const dailyBar  = document.getElementById('dailyBar');
+
+  const yearlyInput = document.getElementById('yearlyInput');
+  const monthlyInput= document.getElementById('monthlyInput');
+  const weeklyInput = document.getElementById('weeklyInput');
+  const dailyInput  = document.getElementById('dailyInput');
+
+  const yearlySave = document.getElementById('yearlySave');
+  const monthlySave= document.getElementById('monthlySave');
+  const weeklySave = document.getElementById('weeklySave');
+  const dailySave  = document.getElementById('dailySave');
+
   // ====== Helpers ======
   const pad2 = n => String(n).padStart(2,'0');
-  function fmtMoney(n){ return `$${n.toFixed(2)}`; }
-  function fmtHMS(ms){
-    const t = Math.max(0, ms|0);
-    const h = Math.floor(t/3600000);
-    const m = Math.floor((t%3600000)/60000);
-    const s = Math.floor((t%60000)/1000);
-    return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
-  }
-  function humanShort(ms){
-    const t = Math.max(0, ms|0);
-    const h = Math.floor(t/3600000);
-    const m = Math.floor((t%3600000)/60000);
-    const s = Math.floor((t%60000)/1000);
-    if (h) return `${h}h ${m}m`;
-    if (m) return `${m}m ${s}s`;
-    return `${s}s`;
-  }
+  function fmtMoney(n){ return `$${(n||0).toFixed(2)}`; }
   function formatMain(ms){
     const total = Math.max(0, ms|0);
     const h = Math.floor(total/3600000);
@@ -499,35 +583,14 @@
     const c = Math.floor((total%1000)/10);
     return `${pad2(h)}:${pad2(m)}:${pad2(s)}.${pad2(c)}`;
   }
-  function toLocalInput(ts){
-    const d = new Date(ts); const pad=n=>String(n).padStart(2,'0');
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }
+  function toLocalInput(ts){ const d = new Date(ts); const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
   function fromLocalInput(val){ return new Date(val.replace(' ', 'T')).getTime(); }
-  function localDateStr(ts){
-    const d = new Date(ts);
-    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-  }
-  function todayStr(){ return localDateStr(Date.now()); }
 
-  // Theme prefs + sound/haptics
-  function savePrefs(){ try{ localStorage.setItem(STORE_KEY_PREFS, JSON.stringify(prefs)); }catch{} }
-  function loadPrefs(){
-    try{
-      const raw = localStorage.getItem(STORE_KEY_PREFS);
-      if (!raw) return;
-      const obj = JSON.parse(raw)||{};
-      prefs.theme = obj.theme === 'light' ? 'light' : 'dark';
-      prefs.sound = obj.sound !== false;
-      prefs.haptics = obj.haptics !== false;
-    }catch{}
-  }
-  function applyTheme(){ document.body.classList.toggle('light', prefs.theme === 'light'); }
-  function updateSettingsUI(){
-    themeSelect.value = prefs.theme;
-    soundToggle.checked = !!prefs.sound;
-    hapticsToggle.checked = !!prefs.haptics;
-  }
+  const startOfDay   = ts => { const d = new Date(ts); d.setHours(0,0,0,0); return d.getTime(); };
+  const startOfWeek  = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x.getTime(); };
+  const startOfMonth = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), 1); x.setHours(0,0,0,0); return x.getTime(); };
+  const startOfYear  = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), 0, 1); x.setHours(0,0,0,0); return x.getTime(); };
+
   function vibrate(ms=20){ if (!prefs.haptics) return; if (navigator.vibrate){ try{ navigator.vibrate(ms); }catch{} } }
   let audioCtx = null;
   function playSound(freq=880, durMs=70){
@@ -546,59 +609,33 @@
   }
 
   // ====== Persistence ======
-  function saveState(){
-    const state = {
-      running, startWallTs, endWallTs, elapsed,
-      rate: parseFloat(rateInput.value)||0,
-      lastSaved: Date.now(),
-      scheduledStartTs, scheduledStopTs,
-      onBreak, breakStartTs,
-      sessionBreakMs,
-      lastBreakDurationMs, lastBreakDateStr
-    };
-    try{ localStorage.setItem(STORE_KEY_STATE, JSON.stringify(state)); }catch{}
-  }
-
-  function loadState(){
+  function savePrefs(){ try{ localStorage.setItem(STORE_KEY_PREFS, JSON.stringify(prefs)); }catch{} }
+  function loadPrefs(){
     try{
-      const raw = localStorage.getItem(STORE_KEY_STATE);
+      const raw = localStorage.getItem(STORE_KEY_PREFS);
       if (!raw) return;
-      const s = JSON.parse(raw)||{};
-      if (typeof s.rate === 'number') rateInput.value = String(s.rate);
-
-      running = !!s.running;
-      startWallTs = typeof s.startWallTs === 'number' ? s.startWallTs : null;
-      endWallTs   = typeof s.endWallTs   === 'number' ? s.endWallTs   : null;
-      elapsed     = typeof s.elapsed     === 'number' ? s.elapsed     : 0;
-
-      scheduledStartTs = typeof s.scheduledStartTs === 'number' ? s.scheduledStartTs : null;
-      scheduledStopTs  = typeof s.scheduledStopTs  === 'number' ? s.scheduledStopTs  : null;
-
-      onBreak = !!s.onBreak;
-      breakStartTs = typeof s.breakStartTs === 'number' ? s.breakStartTs : null;
-
-      sessionBreakMs = typeof s.sessionBreakMs === 'number' ? s.sessionBreakMs : 0;
-
-      lastBreakDurationMs = typeof s.lastBreakDurationMs === 'number' ? s.lastBreakDurationMs : null;
-      lastBreakDateStr = typeof s.lastBreakDateStr === 'string' ? s.lastBreakDateStr : null;
-
-      if (onBreak && breakStartTs){
-        showBreak();
-        startBreakTicker();
-      }
-
-      if (running && startWallTs){
-        const now = Date.now();
-        elapsed = Math.max(0, now - startWallTs);
-        startTime = now - elapsed;
-        update();
-        startInterval();
-      }else{
-        updateDisplays(elapsed);
-      }
-    }catch(e){}
+      const obj = JSON.parse(raw)||{};
+      prefs.theme = obj.theme === 'light' ? 'light' : 'dark';
+      prefs.sound = obj.sound !== false;
+      prefs.haptics = obj.haptics !== false;
+    }catch{}
+  }
+  function saveGoals(){ try{ localStorage.setItem(STORE_KEY_GOALS, JSON.stringify(goals)); }catch{} }
+  function loadGoals(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_GOALS);
+      if (!raw) return;
+      const g = JSON.parse(raw)||{};
+      goals.yearly  = +g.yearly  || 0;
+      goals.monthly = +g.monthly || 0;
+      goals.weekly  = +g.weekly  || 0;
+      goals.daily   = +g.daily   || 0;
+    }catch{}
   }
 
+  function applyTheme(){ document.body.classList.toggle('light', prefs.theme === 'light'); }
+
+  // ====== History store ======
   function saveHistoryStore(){ try{ localStorage.setItem(STORE_KEY_HISTORY, JSON.stringify(history)); }catch(e){} }
   function loadHistoryStore(){
     try{
@@ -664,12 +701,10 @@
       const dur = now - breakStartTs;
       sessionBreakMs += Math.max(0, dur);
       onBreak = false;
-      stopBreakTicker();
-      hideBreak();
+      if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
+      breakDisplay.classList.remove('show');
     }
-    lastBreakDurationMs = null;
-    lastBreakDateStr = null;
-    renderBreakSummary();
+    // We clear the small badge when stopping; goals view uses sums anyway
   }
 
   function stopTimer(){
@@ -692,20 +727,28 @@
     elapsed = 0; startWallTs = null; endWallTs = null;
     timeDisplay.textContent = "00:00:00.00";
     moneyDisplay.textContent = "$0.00";
-    stopBreakTicker();
+    if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
     onBreak = false; breakStartTs = null;
     sessionBreakMs = 0;
-    lastBreakDurationMs = null; lastBreakDateStr = null;
-    hideBreak();
-    renderBreakSummary();
+    breakDisplay.classList.remove('show');
     saveState();
     vibrate(10); playSound(500, 60);
   }
 
   function flashHistoryBtn(){ historyBtn.classList.add('flash'); setTimeout(()=>historyBtn.classList.remove('flash'), 1000); }
 
-  const startOfWeek = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x.getTime(); };
-  const startOfMonth = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), 1); x.setHours(0,0,0,0); return x.getTime(); };
+  function sumRangeSince(rangeStart){
+    // Sum history by endTs in range (consistent with the app elsewhere), plus current-session contribution since the range start.
+    const rate = parseFloat(rateInput.value)||0;
+    const now = Date.now();
+    let total = history.filter(h=>h.endTs>=rangeStart).reduce((a,b)=>a+(b.amount||0),0);
+    if (running && !onBreak && startWallTs){
+      const contribMs = Math.max(0, now - Math.max(startWallTs, rangeStart));
+      total += rate * (contribMs/3600000);
+    }
+    return total;
+  }
+
   function updateTotals(){
     const now = Date.now(), w0=startOfWeek(now), m0=startOfMonth(now);
     const weekSum = history.filter(h=>h.endTs>=w0).reduce((a,b)=>a+(b.amount||0),0);
@@ -714,7 +757,17 @@
     monthTotalEl.textContent = fmtMoney(monthSum);
   }
 
+  // ===== Render History =====
   function renderHistory(){
+    const humanShort = ms=>{
+      const t = Math.max(0, ms|0);
+      const h = Math.floor(t/3600000);
+      const m = Math.floor((t%3600000)/60000);
+      const s = Math.floor((t%60000)/1000);
+      if (h) return `${h}h ${m}m`;
+      if (m) return `${m}m ${s}s`;
+      return `${s}s`;
+    };
     historyList.innerHTML = "";
     history.forEach(item=>{
       const startStr = new Date(item.startTs).toLocaleString();
@@ -757,14 +810,12 @@
       };
     });
 
-    // Export buttons: show “Coming soon” modal
     historyList.querySelectorAll('[data-export]').forEach(btn=>{
-      btn.onclick = ()=>{
-        exportBackdrop.style.display = 'flex';
-      };
+      btn.onclick = ()=>{ exportBackdrop.style.display = 'flex'; };
     });
   }
 
+  // ===== Save history entry =====
   function saveHistory(){
     const rate = parseFloat(rateInput.value)||0;
     if (!startWallTs) startWallTs = Date.now() - elapsed;
@@ -788,13 +839,13 @@
       renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20); playSound(900, 80);
     }
 
-    // Clear for next session
+    // Reset for next session
     saveBackdrop.style.display = "none";
     elapsed = 0; startWallTs = null; endWallTs = null;
     sessionBreakMs = 0;
-    lastBreakDurationMs = null;
-    lastBreakDateStr = null;
-    hideBreak(); renderBreakSummary();
+    if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
+    onBreak = false; breakStartTs = null;
+    breakDisplay.classList.remove('show');
     updateDisplays(0);
     saveState();
   }
@@ -822,47 +873,111 @@
 
   // ===== Break stopwatch logic =====
   function showBreak(){ breakDisplay.classList.add('show'); }
-  function hideBreak(){ breakDisplay.classList.remove('show'); }
   function startBreakTicker(){
-    stopBreakTicker();
-    breakDisplay.textContent = `Break: ${fmtHMS(Date.now() - breakStartTs)}`;
+    if (breakTicker) clearInterval(breakTicker);
+    breakDisplay.textContent = `Break: 00:00:00`;
     breakTicker = setInterval(()=>{
-      breakDisplay.textContent = `Break: ${fmtHMS(Date.now() - breakStartTs)}`;
+      const ms = Date.now() - breakStartTs;
+      const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+      breakDisplay.textContent = `Break: ${pad2(h)}:${pad2(m)}:${pad2(s)}`;
     }, 250);
   }
-  function stopBreakTicker(){ if (breakTicker){ clearInterval(breakTicker); breakTicker = null; } }
-  function renderBreakSummary(){
-    if (sessionBreakMs && sessionBreakMs > 0){
-      breakSummary.textContent = `Break taken: ${humanShort(sessionBreakMs)}`;
-      breakSummary.classList.add('show');
-    } else {
-      breakSummary.textContent = '';
-      breakSummary.classList.remove('show');
-    }
-  }
 
-  // ===== Events =====
-  document.getElementById('exportClose').onclick = ()=>{ exportBackdrop.style.display = 'none'; };
-
-  startBtn.onclick = startTimer;
-  stopBtn.onclick  = stopTimer;
-  clearBtn.onclick = clearTimer;
-
-  // Menu open/close
+  // ===== Menu open/close =====
   function toggleMenu(forceOpen){
     const willOpen = typeof forceOpen === 'boolean' ? forceOpen : !menuPanel.classList.contains('show');
     menuPanel.classList.toggle('show', willOpen);
     menuPanel.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
     menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
   }
+
+  // ===== Goals screen =====
+  let goalsRAF = null;
+  function openGoals(){
+    // Preload inputs with saved values
+    yearlyInput.value  = goals.yearly  ? String(goals.yearly)  : '';
+    monthlyInput.value = goals.monthly ? String(goals.monthly) : '';
+    weeklyInput.value  = goals.weekly  ? String(goals.weekly)  : '';
+    dailyInput.value   = goals.daily   ? String(goals.daily)   : '';
+
+    goalsPanel.classList.add('show');
+    goalsPanel.setAttribute('aria-hidden','false');
+
+    // Start live animation loop
+    const tick = ()=>{
+      renderGoalBars();
+      goalsRAF = requestAnimationFrame(tick);
+    };
+    if (!goalsRAF) goalsRAF = requestAnimationFrame(tick);
+  }
+  function closeGoals(){
+    goalsPanel.classList.remove('show');
+    goalsPanel.setAttribute('aria-hidden','true');
+    if (goalsRAF){ cancelAnimationFrame(goalsRAF); goalsRAF = null; }
+  }
+
+  function clampPct(n){ return Math.max(0, Math.min(100, n)); }
+
+  function renderGoalBars(){
+    const now = Date.now();
+    const year0  = startOfYear(now);
+    const month0 = startOfMonth(now);
+    const week0  = startOfWeek(now);
+    const day0   = startOfDay(now);
+
+    const yVal = sumRangeSince(year0);
+    const mVal = sumRangeSince(month0);
+    const wVal = sumRangeSince(week0);
+    const dVal = sumRangeSince(day0);
+
+    const yT = goals.yearly  || 0;
+    const mT = goals.monthly || 0;
+    const wT = goals.weekly  || 0;
+    const dT = goals.daily   || 0;
+
+    const yPct = yT ? clampPct((yVal / yT) * 100) : 0;
+    const mPct = mT ? clampPct((mVal / mT) * 100) : 0;
+    const wPct = wT ? clampPct((wVal / wT) * 100) : 0;
+    const dPct = dT ? clampPct((dVal / dT) * 100) : 0;
+
+    yearlyBar.style.width  = `${yPct}%`;
+    monthlyBar.style.width = `${mPct}%`;
+    weeklyBar.style.width  = `${wPct}%`;
+    dailyBar.style.width   = `${dPct}%`;
+
+    yearlyValues.textContent  = `${fmtMoney(yVal)} / ${fmtMoney(yT)} (${Math.floor(yPct)}%)`;
+    monthlyValues.textContent = `${fmtMoney(mVal)} / ${fmtMoney(mT)} (${Math.floor(mPct)}%)`;
+    weeklyValues.textContent  = `${fmtMoney(wVal)} / ${fmtMoney(wT)} (${Math.floor(wPct)}%)`;
+    dailyValues.textContent   = `${fmtMoney(dVal)} / ${fmtMoney(dT)} (${Math.floor(dPct)}%)`;
+  }
+
+  // ====== Events ======
+  // Export
+  document.getElementById('exportClose').onclick = ()=>{ exportBackdrop.style.display = 'none'; };
+
+  // Core buttons
+  startBtn.onclick = startTimer;
+  stopBtn.onclick  = stopTimer;
+  clearBtn.onclick = clearTimer;
+
+  // Menu
   menuBtn.onclick = ()=> toggleMenu();
   closeMenu.onclick = ()=> toggleMenu(false);
 
-  // Menu placeholders
-  menuGoals.onclick    = ()=>{ alert('Goals: coming next.'); };
+  // Menu options
+  menuGoals.onclick    = ()=>{ toggleMenu(false); openGoals(); };
   menuSummary.onclick  = ()=>{ alert('Summary: coming next.'); };
   menuCalc.onclick     = ()=>{ alert('Calculator: coming next.'); };
   menuExpenses.onclick = ()=>{ alert('Expenses: coming next.'); };
+
+  // Goals actions
+  goalsClose.onclick = closeGoals;
+  [goalsPanel].forEach(el=> el.addEventListener('click', e=>{ /* no outside click to close for full-screen */ }));
+
+  yearlySave.onclick = ()=>{ goals.yearly  = Math.max(0, +yearlyInput.value || 0); saveGoals(); vibrate(8); };
+  monthlySave.onclick= ()=>{ goals.monthly = Math.max(0, +monthlyInput.value|| 0); saveGoals(); vibrate(8); };
+  weeklySave.onclick = ()=>{ goals.weekly  = Math.max(0, +weeklyInput.value || 0); saveGoals(); vibrate(8); };
+  dailySave.onclick  = ()=>{ goals.daily   = Math.max(0, +dailyInput.value  || 0); saveGoals(); vibrate(8); };
 
   // History panel
   historyBtn.onclick = ()=>{
@@ -875,15 +990,15 @@
     historyPanel.setAttribute('aria-hidden','true');
   };
 
-  // Save/Discard
+  // Save dialog
   discardBtn.onclick = ()=>{ saveBackdrop.style.display = "none"; vibrate(8); playSound(350, 50); };
   saveBtn.onclick = saveHistory;
 
-  // Edit
+  // Edit dialog
   editCancel.onclick = ()=>{ editBackdrop.style.display = "none"; editingId=null; };
   editSave.onclick = applyEdit;
 
-  // Delete
+  // Delete dialog
   confirmNo.onclick = ()=>{ confirmBackdrop.style.display = "none"; pendingDeleteId=null; };
   confirmYes.onclick = ()=>{
     if (pendingDeleteId){
@@ -896,7 +1011,7 @@
   };
 
   // Settings
-  function openSettings(){ updateSettingsUI(); settingsBackdrop.style.display='flex'; }
+  function openSettings(){ themeSelect.value=prefs.theme; soundToggle.checked=prefs.sound; hapticsToggle.checked=prefs.haptics; settingsBackdrop.style.display='flex'; }
   settingsBtn.onclick = openSettings;
   settingsClose.onclick = ()=>{ settingsBackdrop.style.display='none'; };
   settingsSave.onclick = ()=>{
@@ -963,9 +1078,9 @@
     const dur = now - breakStartTs;
     sessionBreakMs += Math.max(0, dur);
     onBreak = false;
-    stopBreakTicker();
-    hideBreak();
-    renderBreakSummary();
+    if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
+    breakDisplay.classList.remove('show');
+    // resume main timer
     startTime = now - elapsed;
     running = true;
     startInterval();
@@ -973,16 +1088,56 @@
     vibrate(14); playSound(900, 80);
   };
 
-  // Close popups on outside click
+  // Close misc popups on outside click
   [startAtBackdrop, stopAtBackdrop, exportBackdrop].forEach(el=>{
     el.addEventListener('click', (e)=>{ if (e.target===el) el.style.display='none'; });
   });
 
-  window.addEventListener('beforeunload', ()=>{ saveState(); savePrefs(); });
-  document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ saveState(); savePrefs(); } });
+  window.addEventListener('beforeunload', ()=>{ saveState(); savePrefs(); saveGoals(); });
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ saveState(); savePrefs(); saveGoals(); } });
 
-  // Boot
+  // ===== Boot =====
+  function saveState(){
+    const state = {
+      running, startWallTs, endWallTs, elapsed,
+      rate: parseFloat(rateInput.value)||0,
+      lastSaved: Date.now(),
+      scheduledStartTs, scheduledStopTs,
+      onBreak, breakStartTs, sessionBreakMs
+    };
+    try{ localStorage.setItem(STORE_KEY_STATE, JSON.stringify(state)); }catch{}
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_STATE);
+      if (!raw) return;
+      const s = JSON.parse(raw)||{};
+      if (typeof s.rate === 'number') rateInput.value = String(s.rate);
+      running = !!s.running;
+      startWallTs = typeof s.startWallTs === 'number' ? s.startWallTs : null;
+      endWallTs   = typeof s.endWallTs   === 'number' ? s.endWallTs   : null;
+      elapsed     = typeof s.elapsed     === 'number' ? s.elapsed     : 0;
+      scheduledStartTs = typeof s.scheduledStartTs === 'number' ? s.scheduledStartTs : null;
+      scheduledStopTs  = typeof s.scheduledStopTs  === 'number' ? s.scheduledStopTs  : null;
+      onBreak = !!s.onBreak;
+      breakStartTs = typeof s.breakStartTs === 'number' ? s.breakStartTs : null;
+      sessionBreakMs = typeof s.sessionBreakMs === 'number' ? s.sessionBreakMs : 0;
+
+      if (onBreak && breakStartTs){ showBreak(); startBreakTicker(); }
+      if (running && startWallTs){
+        const now = Date.now();
+        elapsed = Math.max(0, now - startWallTs);
+        startTime = now - elapsed;
+        update();
+        startInterval();
+      }else{
+        updateDisplays(elapsed);
+      }
+    }catch(e){}
+  }
+
   loadPrefs(); applyTheme();
+  loadGoals();
   loadHistoryStore(); renderHistory(); updateTotals();
   loadState();
   setInterval(()=>{ update(); }, 250);
