@@ -8,7 +8,7 @@
 <!-- 🔄 Force fresh load -->
 <script>
 (function(){
-  const APP_VERSION = "22";
+  const APP_VERSION = "22";                /* keep your baseline version */
   const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
@@ -47,7 +47,14 @@
   }
 
   /* ===== Base */
-  body{font-family:Inter,system-ui,Arial,sans-serif;background:radial-gradient(1200px 800px at 20% 10%, #0c1534 0%, #0b1020 40%, #070c19 100%);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
+  *{box-sizing:border-box}
+  body{
+    font-family:Inter,system-ui,Arial,sans-serif;
+    background:radial-gradient(1200px 800px at 20% 10%, #0c1534 0%, #0b1020 40%, #070c19 100%);
+    color:var(--text);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    height:100vh;margin:0;overflow:hidden
+  }
   .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px;z-index:5}
   .rate-wrap{display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#1a2547,#121a35);border:1px solid #334155;border-radius:10px;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
   input[type="number"]{width:110px;padding:6px 6px;border:none;outline:none;font-size:16px;text-align:right;background:transparent;color:var(--text)}
@@ -95,8 +102,8 @@
   #menuContent{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
   .menu-item{background:linear-gradient(180deg,#0f1a34,#0b1224);border:1px solid #2a3a64;border-radius:12px;padding:12px 14px;font-size:15px;color:#e2e8f0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.25)}
   .menu-item .r{opacity:.7}
-  #settingsBtn{position:absolute;right:20px;bottom:20px;background:#0ea5e9;border:1px solid #0284c7;color:#0b1020;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer;box-shadow:var(--glow-cyan)}
-  #settingsBtn:hover{filter:brightness(1.05)}
+  #settingsBtnFloat{position:absolute;right:20px;bottom:20px;background:#0ea5e9;border:1px solid #0284c7;color:#0b1020;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer;box-shadow:var(--glow-cyan)}
+  #settingsBtnFloat:hover{filter:brightness(1.05)}
 
   /* Goals full-screen */
   #goalsPanel{position:fixed;inset:0;background:radial-gradient(1200px 800px at 80% 0%, #0e1b3a 0%, #0b1224 50%, #09101f 100%);display:none;flex-direction:column;z-index:40}
@@ -226,6 +233,18 @@
   body.light #historyList li{background:#ffffff;border-color:#e5e7eb}
   body.light .field{background:#ffffff;border-color:#e5e7eb}
   body.light .goal-bar{background:#eef2ff;border-color:#c7d2fe}
+
+  /* ===== Inbox additions ===== */
+  #inboxBtn{position:fixed;top:20px;right:20px;background:linear-gradient(180deg,#17233f,#0f1a35);color:#fff;border:1px solid #2a3a64;border-radius:20px;padding:10px 14px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s;z-index:35}
+  #inboxBtn:hover{background:#1b2a52}
+  #inboxBtn svg{width:18px;height:18px}
+  #inboxPanel{position:fixed;top:0;right:-75%;width:75%;max-width:420px;height:100%;background:linear-gradient(180deg,#0e172d,#0a1326);border-left:2px solid #2b3f6f;border-radius:12px 0 0 12px;transition:right .3s;display:flex;flex-direction:column;z-index:45}
+  #inboxPanel.show{right:0}
+  #inboxHeader{background:#0b1224;padding:12px 16px;border-bottom:1px solid #2b3f6f;display:flex;justify-content:space-between;align-items:center;border-radius:12px 0 0 0}
+  #inboxHeader h3{margin:0;font-size:18px}
+  #closeInbox{background:#64748b;border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
+  #inboxBody{flex:1;display:flex;align-items:center;justify-content:center;padding:16px}
+  .inbox-empty{color:#94a3b8;font-size:15px;opacity:.9;text-align:center;background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:14px 18px;box-shadow:0 12px 24px rgba(0,0,0,.28)}
 </style>
 </head>
 <body>
@@ -282,6 +301,15 @@
   Stats
 </button>
 
+<!-- Inbox button (top-right) -->
+<button id="inboxBtn" aria-controls="inboxPanel" aria-expanded="false" title="Inbox">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
+    <path d="M4 5h16v14H4z"></path>
+    <path d="M22 6l-10 7L2 6"></path>
+  </svg>
+  Inbox
+</button>
+
 <!-- Menu Panel -->
 <div id="menuPanel" aria-hidden="true" role="dialog" aria-labelledby="menuTitle">
   <div id="menuHeader">
@@ -301,7 +329,7 @@
     <div class="menu-item" id="menuCalc"><span>Calculator</span><span class="r">›</span></div>
     <div class="menu-item" id="menuExpenses"><span>Expenses</span><span class="r">›</span></div>
   </div>
-  <button id="settingsBtn" aria-controls="settingsBackdrop">Settings</button>
+  <button id="settingsBtnFloat" aria-controls="settingsBackdrop">Settings</button>
 </div>
 
 <!-- Goals -->
@@ -350,6 +378,17 @@
     <div class="card"><div class="k">This month</div><div class="v" id="monthTotal">$0.00</div></div>
   </div>
   <ul id="historyList"></ul>
+</div>
+
+<!-- Inbox Panel -->
+<div id="inboxPanel" aria-hidden="true" role="dialog" aria-labelledby="inboxTitle">
+  <div id="inboxHeader">
+    <h3 id="inboxTitle">Inbox</h3>
+    <button id="closeInbox">Close</button>
+  </div>
+  <div id="inboxBody">
+    <div class="inbox-empty">no messages</div>
+  </div>
 </div>
 
 <!-- Save / Edit / Confirm / Settings / StartAt / StopAt / Export / Stats -->
@@ -445,6 +484,8 @@
   </div>
 </div>
 
+<!-- Inbox structure already added above -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
   /* ========= State ========= */
@@ -513,7 +554,7 @@
   const menuBtn = document.getElementById('menuBtn');
   const menuPanel = document.getElementById('menuPanel');
   const closeMenu = document.getElementById('closeMenu');
-  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsBtnFloat = document.getElementById('settingsBtnFloat');
 
   const menuGoals   = document.getElementById('menuGoals');
   const menuSummary = document.getElementById('menuSummary');
@@ -569,6 +610,10 @@
   const avgDayEl = document.getElementById('avgDay');
   const trendEl = document.getElementById('trend');
 
+  const inboxBtn = document.getElementById('inboxBtn');
+  const inboxPanel = document.getElementById('inboxPanel');
+  const closeInbox = document.getElementById('closeInbox');
+
   let earningsChart = null;
   let hoursChart = null;
   let breakChart = null;
@@ -584,7 +629,11 @@
     const c = Math.floor((total%1000)/10);
     return `${pad2(h)}:${pad2(m)}:${pad2(s)}.${pad2(c)}`;
   }
-  function toLocalInput(ts){ const d = new Date(ts); const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  function toLocalInput(ts){
+    const d = new Date(ts);
+    const pad=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
   function fromLocalInput(val){ return new Date(val.replace(' ', 'T')).getTime(); }
 
   const startOfDay   = ts => { const d = new Date(ts); d.setHours(0,0,0,0); return d.getTime(); };
@@ -977,7 +1026,7 @@
   /* ========= Stats ========= */
   const glowPlugin = {
     id:'glow',
-    afterDatasetsDraw(chart, args, opts){
+    afterDatasetsDraw(chart){
       const ctx = chart.ctx; ctx.save();
       chart.data.datasets.forEach((ds, i)=>{
         const meta = chart.getDatasetMeta(i);
@@ -1050,7 +1099,7 @@
     const hours7 = hoursSeries.reduce((a,b)=>a+b,0);
     const avgRate = hours7>0 ? (total7/hours7) : 0;
     const avgDay = total7/7;
-    avgRateEl.textContent = fmtMoney(avgRate) + "/hr";
+    avgRateEl.textContent = `${fmtMoney(avgRate)}/hr`;
     avgDayEl.textContent = fmtMoney(avgDay);
     const trendUp = earningsSeries[6] >= earningsSeries[5];
     trendEl.textContent = trendUp ? "Uptrend" : "Slight dip";
@@ -1136,7 +1185,7 @@
         responsive:true,
         plugins:{
           legend:{display:false},
-          tooltip:{callbacks:{label:(ctx)=>`$${ctx.raw.toFixed(2)}`}}
+          tooltip:{callbacks:{label:(ctx)=>'$'+ctx.raw.toFixed(2)}}
         },
         scales:{
           x:{ticks:{color:'#e2e8f0'}},
@@ -1229,7 +1278,7 @@
   };
 
   function openSettings(){ themeSelect.value=prefs.theme; soundToggle.checked=prefs.sound; hapticsToggle.checked=prefs.haptics; settingsBackdrop.classList.add('show'); }
-  settingsBtn.onclick = openSettings;
+  settingsBtnFloat.onclick = openSettings;
   settingsClose.onclick = ()=>{ settingsBackdrop.classList.remove('show'); };
   settingsSave.onclick = ()=>{
     prefs.theme = themeSelect.value === 'light' ? 'light' : 'dark';
@@ -1311,8 +1360,52 @@
     el.addEventListener('click', (e)=>{ if (e.target===el) el.classList.remove('show'); });
   });
 
-  window.addEventListener('beforeunload', ()=>{ saveState(); savePrefs(); saveGoals(); });
-  document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ saveState(); savePrefs(); saveGoals(); } });
+  /* ========= Inbox logic & gating ========= */
+  function anyOverlayOpen(){
+    return (
+      menuPanel.classList.contains('show') ||
+      historyPanel.classList.contains('show') ||
+      goalsPanel.classList.contains('show') ||
+      statsBackdrop.classList.contains('show') ||
+      settingsBackdrop.classList.contains('show') ||
+      saveBackdrop.classList.contains('show') ||
+      editBackdrop.classList.contains('show') ||
+      confirmBackdrop.classList.contains('show') ||
+      startAtBackdrop.classList.contains('show') ||
+      stopAtBackdrop.classList.contains('show') ||
+      exportBackdrop.classList.contains('show')
+    );
+  }
+  function isMainScreen(){ return !anyOverlayOpen(); }
+  function refreshInboxBtnVisibility(){
+    inboxBtn.style.display = isMainScreen() ? 'inline-flex' : 'none';
+    inboxBtn.setAttribute('aria-expanded', inboxPanel.classList.contains('show') ? 'true' : 'false');
+  }
+  function openInbox(){
+    if (!isMainScreen()) return;
+    inboxPanel.classList.add('show');
+    inboxPanel.setAttribute('aria-hidden','false');
+    inboxBtn.setAttribute('aria-expanded','true');
+  }
+  function closeInboxPanel(){
+    inboxPanel.classList.remove('show');
+    inboxPanel.setAttribute('aria-hidden','true');
+    inboxBtn.setAttribute('aria-expanded','false');
+  }
+
+  inboxBtn.onclick = ()=>{ if (isMainScreen()) openInbox(); };
+  closeInbox.onclick = closeInboxPanel;
+
+  function observeOverlay(el){
+    if (!el) return;
+    new MutationObserver(()=>{
+      if (anyOverlayOpen()) closeInboxPanel();
+      refreshInboxBtnVisibility();
+    }).observe(el, { attributes:true, attributeFilter:['class','style'] });
+  }
+  [menuPanel, historyPanel, goalsPanel, statsBackdrop, settingsBackdrop,
+   saveBackdrop, editBackdrop, confirmBackdrop, startAtBackdrop, stopAtBackdrop, exportBackdrop]
+   .forEach(observeOverlay);
 
   /* ========= Boot ========= */
   function saveState(){
@@ -1358,7 +1451,12 @@
   loadGoals();
   loadHistoryStore(); renderHistory(); updateTotals();
   loadState();
-  setInterval(update, 16); // smooth 60fps updates for glow/liquid/metrics
+  refreshInboxBtnVisibility();
+
+  window.addEventListener('beforeunload', ()=>{ saveState(); savePrefs(); saveGoals(); });
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ saveState(); savePrefs(); saveGoals(); } });
+
+  setInterval(()=>{ update(); refreshInboxBtnVisibility(); }, 1000/60); // smooth updates + button gating
 </script>
 </body>
 </html>
