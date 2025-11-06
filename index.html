@@ -284,22 +284,6 @@
   Inbox
 </button>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <div id="menuPanel" aria-hidden="true" role="dialog" aria-labelledby="menuTitle">
   <div id="menuHeader">
     <div class="title">
@@ -632,4 +616,1088 @@
   const xpDate = document.getElementById('xpDate');
   const xpMerchant = document.getElementById('xpMerchant');
   const xpCategory = document.getElementById('xpCategory');
-  const xpNote = document.getElementById('x
+  const xpNote = document.getElementById('xpNote');
+  const xpAddBtn = document.getElementById('xpAddBtn');
+  const xpImportBtn = document.getElementById('xpImportBtn');
+  const xpList = document.getElementById('xpList');
+  const xpMonthSpend = document.getElementById('xpMonthSpend');
+  const xpBudgetHint = document.getElementById('xpBudgetHint');
+  const xpTopCat = document.getElementById('xpTopCat');
+  const xpTopCatShare = document.getElementById('xpTopCatShare');
+  const xpPieCanvas = document.getElementById('xpPie');
+  const xpTrendCanvas = document.getElementById('xpTrend');
+  const xpSuggestions = document.getElementById('xpSuggestions');
+  const xpClearMonthBtn = document.getElementById('xpClearMonthBtn');
+
+  const blocker = document.getElementById('globalBlocker');
+
+  let earningsChart = null;
+  let hoursChart = null;
+  let breakChart = null;
+  let xpPie = null;
+  let xpTrend = null;
+
+  /* ========= Helpers ========= */
+  const pad2 = n => String(n).padStart(2,'0');
+  function fmtMoney(n){ return `$${(n||0).toFixed(2)}`; }
+  function formatMain(ms){
+    const total = Math.max(0, ms|0);
+    const h = Math.floor(total/3600000);
+    const m = Math.floor((total%3600000)/60000);
+    const s = Math.floor((total%60000)/1000);
+    const c = Math.floor((total%1000)/10);
+    return `${pad2(h)}:${pad2(m)}:${pad2(s)}.${pad2(c)}`;
+  }
+  function toLocalInput(ts){
+    const d = new Date(ts);
+    const pad=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function fromLocalInput(val){ return new Date(val.replace(' ', 'T')).getTime(); }
+
+  const startOfDay   = ts => { const d = new Date(ts); d.setHours(0,0,0,0); return d.getTime(); };
+  const startOfWeek  = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x.getTime(); };
+  const startOfMonth = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), 1); x.setHours(0,0,0,0); return x.getTime(); };
+  function humanDate(ts){ const d=new Date(ts); return d.toLocaleDateString(); }
+  function rangeDays(n){ const arr=[]; const now=new Date(); now.setHours(0,0,0,0); for(let i=n-1;i>=0;i--){ arr.push(+now - i*86400000); } return arr; }
+  function vibrate(ms=20){ if (!prefs.haptics) return; if (navigator.vibrate){ try{ navigator.vibrate(ms); }catch{} } }
+  let audioCtx = null;
+  function playSound(freq=880, durMs=70){
+    if (!prefs.sound) return;
+    try{
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = freq; g.gain.value = 0.0001;
+      o.connect(g); g.connect(audioCtx.destination);
+      const t = audioCtx.currentTime;
+      g.gain.exponentialRampToValueAtTime(0.15, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + durMs/1000);
+      o.start(); o.stop(t + durMs/1000 + 0.01);
+    }catch{}
+  }
+
+/* ========= Persistence ========= */
+  function savePrefs(){ try{ localStorage.setItem(STORE_KEY_PREFS, JSON.stringify(prefs)); }catch{} }
+  function loadPrefs(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_PREFS);
+      if (!raw) return;
+      const obj = JSON.parse(raw)||{};
+      prefs.theme = obj.theme === 'light' ? 'light' : 'dark';
+      prefs.sound = obj.sound !== false;
+      prefs.haptics = obj.haptics !== false;
+    }catch{}
+  }
+  function saveGoals(){ try{ localStorage.setItem(STORE_KEY_GOALS, JSON.stringify(goals)); }catch{} }
+  function loadGoals(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_GOALS);
+      if (!raw) return;
+      const g = JSON.parse(raw)||{};
+      goals.yearly  = +g.yearly  || 0;
+      goals.monthly = +g.monthly || 0;
+      goals.weekly  = +g.weekly  || 0;
+      goals.daily   = +g.daily   || 0;
+    }catch{}
+  }
+  function applyTheme(){ document.body.classList.toggle('light', prefs.theme === 'light'); }
+
+  function saveHistoryStore(){ try{ localStorage.setItem(STORE_KEY_HISTORY, JSON.stringify(history)); }catch(e){} }
+  function loadHistoryStore(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_HISTORY);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) history = arr;
+    }catch(e){}
+  }
+
+  function saveExpenses(){ try{ localStorage.setItem(STORE_KEY_EXPENSES, JSON.stringify(expenses)); }catch(e){} }
+  function loadExpenses(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_EXPENSES);
+      if (!raw) return;
+      const arr = JSON.parse(raw)||[];
+      if (Array.isArray(arr)) expenses = arr;
+    }catch(e){}
+  }
+  function saveBudgets(){ try{ localStorage.setItem(STORE_KEY_BUDGETS, JSON.stringify(budgets)); }catch(e){} }
+  function loadBudgets(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_BUDGETS);
+      if (!raw) return;
+      const obj = JSON.parse(raw)||{};
+      budgets = Object.assign(budgets, obj);
+    }catch(e){}
+  }
+
+  /* ========= Live contribution ========= */
+  function currentSessionContributionSince(tsFloorMs){
+    if (!running || onBreak || !startWallTs) return {amount:0, ms:0};
+    const rate = parseFloat(rateInput.value)||0;
+    const now = Date.now();
+    const start = Math.max(startWallTs, tsFloorMs);
+    if (now <= start) return {amount:0, ms:0};
+    const ms = now - start;
+    return {amount: rate*(ms/3600000), ms};
+  }
+  function sumEntriesBetween(startMs, endMs){
+    let ms=0, amount=0, sessions=0, breakMs=0;
+    for (const h of history){
+      if (h.endTs >= startMs && h.endTs < endMs){
+        ms += h.elapsedMs||0;
+        amount += h.amount||0;
+        sessions += 1;
+        breakMs += h.breakMs||0;
+      }
+    }
+    return {ms, amount, sessions, breakMs};
+  }
+  function sumRangeSince(rangeStart){
+    const rate = parseFloat(rateInput.value)||0;
+    const now = Date.now();
+    let total = history.filter(h=>h.endTs>=rangeStart).reduce((a,b)=>a+(b.amount||0),0);
+    if (running && !onBreak && startWallTs){
+      const contribMs = Math.max(0, now - Math.max(startWallTs, rangeStart));
+      total += rate * (contribMs/3600000);
+    }
+    return total;
+  }
+
+  function update(){
+    const now = Date.now();
+    const w1 = (now/22)%60; const w2 = (now/37)%90;
+    [yearlyBar, monthlyBar, weeklyBar, dailyBar].forEach(el=>{
+      if (!el) return;
+      el.style.setProperty('--wave1', `${w1}px`);
+      el.style.setProperty('--wave2', `${w2}px`);
+    });
+
+    if (scheduledStartTs && now >= scheduledStartTs && !running && !onBreak){
+      scheduledStartTs = null; startTimer();
+    }
+    if (scheduledStopTs && now >= scheduledStopTs && running){
+      finalizeActiveBreak();
+      scheduledStopTs = null;
+      running = false;
+      clearInterval(interval); interval = null;
+      endWallTs = now;
+      saveState();
+      saveBackdrop.classList.add('show');
+      vibrate(16); playSound(600, 90);
+    }
+
+    if (running){
+      elapsed = now - startTime;
+      endWallTs = now;
+      updateDisplays(elapsed);
+      if (now % 500 < 20) saveState();
+    }
+  }
+
+  function updateDisplays(elapsedMs){
+    const rate = parseFloat(rateInput.value)||0;
+    const earned = (rate * (elapsedMs / 3600000));
+    timeDisplay.textContent = formatMain(elapsedMs);
+    moneyDisplay.textContent = fmtMoney(earned);
+  }
+  function startInterval(){ if (interval) clearInterval(interval); interval = setInterval(update, 16); }
+
+  function startTimer(){
+    if (running) return;
+    running = true;
+    const now = Date.now();
+    if (!startWallTs) startWallTs = now;
+    startTime = now - elapsed;
+    startInterval();
+    saveState();
+    vibrate(12); playSound(1200, 80);
+  }
+
+  function finalizeActiveBreak(){
+    if (onBreak){
+      const now = Date.now();
+      const dur = now - breakStartTs;
+      sessionBreakMs += Math.max(0, dur);
+      onBreak = false;
+      if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
+      breakDisplay.classList.remove('show');
+      breakSummary.textContent = `Break taken: ${humanShort(sessionBreakMs)}`;
+      breakSummary.classList.add('show');
+    }
+  }
+
+  function stopTimer(){
+    if (!running) return;
+    finalizeActiveBreak();
+    running = false;
+    clearInterval(interval); interval = null;
+    endWallTs = Date.now();
+    saveState();
+    saveBackdrop.classList.add('show');
+    vibrate(16); playSound(600, 90);
+  }
+
+  function clearTimer(){
+    if (running){
+      alert('Stop the timer first to clear the display.');
+      vibrate(8); playSound(400, 60);
+      return;
+    }
+    elapsed = 0; startWallTs = null; endWallTs = null;
+    timeDisplay.textContent = "00:00:00.00";
+    moneyDisplay.textContent = "$0.00";
+    if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
+    onBreak = false; breakStartTs = null;
+    sessionBreakMs = 0;
+    breakDisplay.classList.remove('show');
+    breakSummary.classList.remove('show');
+    breakSummary.textContent = "";
+    saveState();
+    vibrate(10); playSound(500, 60);
+  }
+
+  function flashHistoryBtn(){ historyBtn.classList.add('flash'); setTimeout(()=>historyBtn.classList.remove('flash'), 1000); }
+
+  function updateTotals(){
+    const now = Date.now(), w0=startOfWeek(now), m0=startOfMonth(now);
+    const weekSum = history.filter(h=>h.endTs>=w0).reduce((a,b)=>a+(b.amount||0),0);
+    const monthSum = history.filter(h=>h.endTs>=m0).reduce((a,b)=>a+(b.amount||0),0);
+    weekTotalEl.textContent = fmtMoney(weekSum);
+    monthTotalEl.textContent = fmtMoney(monthSum);
+  }
+
+  function humanShort(ms){
+    const t = Math.max(0, ms|0);
+    const h = Math.floor(t/3600000);
+    const m = Math.floor((t%3600000)/60000);
+    const s = Math.floor((t%60000)/1000);
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  function renderHistory(){
+    historyList.innerHTML = "";
+    history.forEach(item=>{
+      const startStr = new Date(item.startTs).toLocaleString();
+      const endStr = new Date(item.endTs).toLocaleString();
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <div>
+          <div class="meta">Start: ${startStr} • End: ${endStr}${item.tag ? ` • #${item.tag}` : ''}</div>
+          <div class="dur">Duration: ${formatMain(item.elapsedMs)}</div>
+          ${item.breakMs ? `<div class="meta"><span class="break-highlight">Break</span>: ${humanShort(item.breakMs)}</div>` : ''}
+          <div class="amt">${fmtMoney(item.amount)}</div>
+          ${item.tag ? `<div class="tag">#${item.tag}</div>` : ''}
+        </div>
+        <div class="row-actions">
+          <button class="btn-small btn-danger" data-del="${item.id}">Delete</button>
+          <button class="btn-small" data-edit="${item.id}">Edit</button>
+          <button class="btn-small btn-export" data-export="${item.id}">Export</button>
+        </div>
+      `;
+      historyList.appendChild(li);
+    });
+
+    historyList.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.onclick = ()=>{ pendingDeleteId = btn.getAttribute('data-del'); confirmBackdrop.classList.add('show'); };
+    });
+
+    historyList.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.getAttribute('data-edit');
+        const entry = history.find(h=>String(h.id)===String(id));
+        if (!entry) return;
+        editingId = entry.id;
+        editStart.value = toLocalInput(entry.startTs);
+        editEnd.value = toLocalInput(entry.endTs);
+        editTag.value = entry.tag || '';
+        editBackdrop.classList.add('show');
+      };
+    });
+
+    historyList.querySelectorAll('[data-export]').forEach(btn=>{
+      btn.onclick = ()=>{ exportBackdrop.classList.add('show'); };
+    });
+  }
+
+  function saveHistory(){
+    const rate = parseFloat(rateInput.value)||0;
+    if (!startWallTs) startWallTs = Date.now() - elapsed;
+    if (!endWallTs) endWallTs = Date.now();
+    const durationMs = Math.max(0, endWallTs - startWallTs);
+
+    if (durationMs > 0){
+      const now = new Date(endWallTs);
+      const entry = {
+        id: now.getTime().toString()+Math.random().toString(36).slice(2,6),
+        startTs: startWallTs,
+        endTs: endWallTs,
+        elapsedMs: durationMs,
+        amount: +(rate * (durationMs/3600000)).toFixed(2),
+        tag: (tagInput.value||'').trim(),
+        breakMs: sessionBreakMs || 0
+      };
+      history.unshift(entry);
+      saveHistoryStore();
+      tagInput.value = '';
+      renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20); playSound(900, 80);
+    }
+
+    saveBackdrop.classList.remove('show');
+    elapsed = 0; startWallTs = null; endWallTs = null;
+    sessionBreakMs = 0;
+    if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
+    onBreak = false; breakStartTs = null;
+    breakDisplay.classList.remove('show');
+    breakSummary.classList.remove('show');
+    breakSummary.textContent = "";
+    updateDisplays(0);
+    saveState();
+  }
+
+  function applyEdit(){
+    if (!editingId) return;
+    const entry = history.find(h=>h.id===editingId);
+    if (!entry) return;
+
+    const s = editStart.value, e = editEnd.value;
+    if (!s || !e) { alert('Provide both start and end.'); return; }
+    const startTs = fromLocalInput(s), endTs = fromLocalInput(e);
+    if (!(isFinite(startTs)&&isFinite(endTs)) || endTs < startTs){ alert('End must be after Start.'); return; }
+    const rate = parseFloat(rateInput.value)||0;
+    const dur = endTs - startTs;
+    entry.startTs = startTs; entry.endTs = endTs; entry.elapsedMs = dur;
+    entry.amount = +(rate * (dur/3600000)).toFixed(2);
+    entry.tag = (editTag.value||'').trim();
+
+    saveHistoryStore();
+    editingId = null;
+    editBackdrop.classList.remove('show');
+    renderHistory(); updateTotals(); vibrate(15); playSound(800, 70);
+  }
+
+  function showBreak(){ breakDisplay.classList.add('show'); }
+  function startBreakTicker(){
+    if (breakTicker) clearInterval(breakTicker);
+    breakDisplay.textContent = `Break: 00:00:00`;
+    breakTicker = setInterval(()=>{
+      const ms = Date.now() - breakStartTs;
+      const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+      breakDisplay.textContent = `Break: ${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+    }, 250);
+  }
+
+  /* ===== Goals open/close + SAVE FIX ===== */
+  let goalsRAF = null;
+  function openGoals(){
+    yearlyInput.value  = goals.yearly  ? String(goals.yearly)  : '';
+    monthlyInput.value = goals.monthly ? String(goals.monthly) : '';
+    weeklyInput.value  = goals.weekly  ? String(goals.weekly)  : '';
+    dailyInput.value   = goals.daily   ? String(goals.daily)   : '';
+
+    goalsPanel.classList.add('show');
+    goalsPanel.setAttribute('aria-hidden','false');
+
+    const tick = ()=>{ renderGoalBars(); goalsRAF = requestAnimationFrame(tick); };
+    if (!goalsRAF) goalsRAF = requestAnimationFrame(tick);
+  }
+  function closeGoals(){
+    goalsPanel.classList.remove('show');
+    goalsPanel.setAttribute('aria-hidden','true');
+    if (goalsRAF){ cancelAnimationFrame(goalsRAF); goalsRAF = null; }
+  }
+  function clampPct(n){ return Math.max(0, Math.min(100, n)); }
+  function renderGoalBars(){
+    const now = Date.now();
+    const year0  = (new Date(new Date(now).getFullYear(),0,1)).getTime();
+    const month0 = (new Date(new Date(now).getFullYear(),new Date(now).getMonth(),1)).getTime();
+    const week0  = (function(){ const d=new Date(now); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return +x; })();
+    const day0   = (function(d){ d=new Date(now); d.setHours(0,0,0,0); return +d; })();
+
+    const yVal = sumRangeSince(year0);
+    const mVal = sumRangeSince(month0);
+    const wVal = sumRangeSince(week0);
+    const dVal = sumRangeSince(day0);
+
+    const yT = goals.yearly  || 0;
+    const mT = goals.monthly || 0;
+    const wT = goals.weekly  || 0;
+    const dT = goals.daily   || 0;
+
+    const yPct = yT ? clampPct((yVal / yT) * 100) : 0;
+    const mPct = mT ? clampPct((mVal / mT) * 100) : 0;
+    const wPct = wT ? clampPct((wVal / wT) * 100) : 0;
+    const dPct = dT ? clampPct((dVal / dT) * 100) : 0;
+
+    yearlyBar.style.width  = `${yPct}%`;  yearlyBar.dataset.pct  = String(Math.floor(yPct));
+    monthlyBar.style.width = `${mPct}%`;  monthlyBar.dataset.pct = String(Math.floor(mPct));
+    weeklyBar.style.width  = `${wPct}%`;  weeklyBar.dataset.pct  = String(Math.floor(wPct));
+    dailyBar.style.width   = `${dPct}%`;  dailyBar.dataset.pct   = String(Math.floor(dPct));
+
+    yearlyValues.textContent  = `${fmtMoney(yVal)} / ${fmtMoney(yT)} (${Math.floor(yPct)}%)`;
+    monthlyValues.textContent = `${fmtMoney(mVal)} / ${fmtMoney(mT)} (${Math.floor(mPct)}%)`;
+    weeklyValues.textContent  = `${fmtMoney(wVal)} / ${fmtMoney(wT)} (${Math.floor(wPct)}%)`;
+    dailyValues.textContent   = `${fmtMoney(dVal)} / ${fmtMoney(dT)} (${Math.floor(dPct)}%)`;
+  }
+  // ✅ Save handlers that persist goals
+  yearlySave.onclick  = ()=>{ goals.yearly  = +yearlyInput.value  || 0; saveGoals(); renderGoalBars(); vibrate(8); playSound(900,70); };
+  monthlySave.onclick = ()=>{ goals.monthly = +monthlyInput.value || 0; saveGoals(); renderGoalBars(); vibrate(8); playSound(900,70); };
+  weeklySave.onclick  = ()=>{ goals.weekly  = +weeklyInput.value  || 0; saveGoals(); renderGoalBars(); vibrate(8); playSound(900,70); };
+  dailySave.onclick   = ()=>{ goals.daily   = +dailyInput.value   || 0; saveGoals(); renderGoalBars(); vibrate(8); playSound(900,70); };
+
+  /* ===== Charts plugin ===== */
+  const glowPlugin = { id:'glow', afterDatasetsDraw(chart){ const ctx = chart.ctx; ctx.save(); chart.data.datasets.forEach((ds, i)=>{ const meta = chart.getDatasetMeta(i); if (!meta.data) return; ctx.shadowColor = (ds.borderColor || 'rgba(255,255,255,.5)'); ctx.shadowBlur = 16; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0; meta.data.forEach(pt=>{ ctx.beginPath(); ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI*2); ctx.fillStyle = Array.isArray(ds.pointBackgroundColor) ? ds.pointBackgroundColor[0] : (ds.pointBackgroundColor || ds.backgroundColor || '#fff'); ctx.fill(); }); }); ctx.restore(); } };
+  Chart.register(glowPlugin);
+
+  function gradient(ctx, area, from, to){ const g = ctx.createLinearGradient(0, area.bottom, 0, area.top); g.addColorStop(0, from); g.addColorStop(1, to); return g; }
+
+  function openStats(){ renderStats(); statsBackdrop.classList.add('show'); syncOverlays(); }
+  function closeStats(){ statsBackdrop.classList.remove('show'); syncOverlays(); }
+  document.getElementById('statsBtn').onclick = openStats;
+  document.getElementById('statsClose').onclick = closeStats;
+  statsBackdrop.addEventListener('click',(e)=>{ if (e.target===statsBackdrop) closeStats(); });
+
+  function labelsFromDates(days){ return days.map(ts=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(ts).getDay()]); }
+
+
+  // 🎯 Tag color generator for legend squares
+  function colorForTag(tag, idx){
+    const base = (Array.from(tag||'Untagged').reduce((a,c)=>a+c.charCodeAt(0),0)+idx*37)%360;
+    return `hsl(${base}, 70%, 55%)`;
+  }
+
+  function renderStats(){
+    const now = Date.now();
+    const d0 = (d=>{d=new Date(now); d.setHours(0,0,0,0); return +d;})();
+    const w0 = (function(){ const d=new Date(now); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return +x; })();
+    const m0 = (d=>{d=new Date(now); d.setDate(1); d.setHours(0,0,0,0); return +d;})();
+
+    const todayFixed = sumEntriesBetween(d0, d0+86400000);
+    const todayLive = currentSessionContributionSince(d0);
+    const todayAmount = todayFixed.amount + todayLive.amount;
+
+    const weekFixed = sumEntriesBetween(w0, w0 + 7*86400000);
+    const weekLive = currentSessionContributionSince(w0);
+    const weekAmount = weekFixed.amount + weekLive.amount;
+
+    const mEnd = new Date(new Date(m0).getFullYear(), new Date(m0).getMonth()+1, 1).getTime();
+    const monthFixed = sumEntriesBetween(m0, mEnd);
+    const monthLive = currentSessionContributionSince(m0);
+    const monthAmount = monthFixed.amount + monthLive.amount;
+
+    todayEarned.textContent = fmtMoney(todayAmount);
+    weekEarned.textContent  = fmtMoney(weekAmount);
+    monthEarned.textContent = fmtMoney(monthAmount);
+
+    const last7 = rangeDays(7);
+    const earningsSeries = last7.map(d=>{
+      const fx = sumEntriesBetween(d, d+86400000);
+      const live = (d===d0) ? currentSessionContributionSince(d) : {amount:0,ms:0};
+      return +(fx.amount + live.amount).toFixed(2);
+    });
+    const hoursSeries = last7.map(d=>{
+      const fx = sumEntriesBetween(d, d+86400000);
+      const live = (d===d0) ? currentSessionContributionSince(d) : {amount:0, ms:0};
+      return +(((fx.ms + live.ms)/3600000).toFixed(2));
+    });
+
+    const total7 = earningsSeries.reduce((a,b)=>a+b,0);
+    const hours7 = hoursSeries.reduce((a,b)=>a+b,0);
+    const avgRate = hours7>0 ? (total7/hours7) : 0;
+    const avgDay = total7/7;
+    avgRateEl.textContent = `${fmtMoney(avgRate)}/hr`;
+    avgDayEl.textContent = fmtMoney(avgDay);
+    trendEl.textContent = earningsSeries[6] >= earningsSeries[5] ? "Uptrend" : "Slight dip";
+
+    renderCharts(labelsFromDates(last7), earningsSeries, hoursSeries);
+
+    /* 🥯 Tag donut: sum earnings by tag for current week */
+    const tagMap = {};
+    for (const h of history){
+      if (h.endTs >= w0){ const key = (h.tag && h.tag.trim()) ? h.tag.trim() : 'Untagged'; tagMap[key] = (tagMap[key]||0) + (h.amount||0); }
+    }
+    const tagEntries = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);
+    const labels = tagEntries.map(([k])=>k);
+    const data   = tagEntries.map(([,v])=>+v.toFixed(2));
+    const colors = labels.map((t,i)=>colorForTag(t,i));
+
+    const top = tagEntries[0];
+    const sum = data.reduce((a,b)=>a+b,0) || 1;
+    document.getElementById('topTag').textContent = top ? `#${top[0]}` : '—';
+    document.getElementById('tagCount').textContent = String(labels.length);
+    document.getElementById('topShare').textContent = top ? `${((top[1]/sum)*100).toFixed(1)}%` : '0%';
+
+    if (breakChart) breakChart.destroy();
+    const bctx = document.getElementById('breakChart').getContext('2d');
+    breakChart = new Chart(bctx, {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:'#0b1224', borderWidth:2, hoverOffset:10 }]},
+      options:{
+        cutout:'68%',
+        plugins:{
+          legend:{
+            position:'top',
+            align:'center',
+            labels:{
+              color:'#e2e8f0',
+              usePointStyle:true,
+              pointStyle:'rect',   /* small square swatch */
+              boxWidth:12,
+              boxHeight:12,
+              padding:12
+            }
+          },
+          tooltip:{callbacks:{label:(ctx)=> `${ctx.label}: ${fmtMoney(ctx.raw||0)}`}}
+        },
+        animation:{animateRotate:true, animateScale:true}
+      }
+    });
+  }
+
+  function renderCharts(labels, earnings, hours){
+    const ectx = document.getElementById('earningsChart').getContext('2d');
+    const hctx = document.getElementById('hoursChart').getContext('2d');
+
+    if (earningsChart) earningsChart.destroy();
+    if (hoursChart) hoursChart.destroy();
+
+    const eArea = {top:0,bottom:170}, hArea = {top:0,bottom:170};
+    const hoursFill = gradient(hctx, hArea, 'rgba(96,165,250,0.08)','rgba(96,165,250,0.35)');
+    const barColors = earnings.map((v,i)=> i===labels.length-1 ? 'rgba(34,197,94,1)' :
+      ['#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b','#ef4444','#22d3ee'][i%7]);
+
+    earningsChart = new Chart(ectx, {
+      type:'bar',
+      data:{ labels, datasets:[{ label:'Earnings ($)', data:earnings, backgroundColor: barColors, borderColor:'#0ea5e9', borderWidth:1.2, hoverBackgroundColor: barColors }]},
+      options:{ responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>'$'+ctx.raw.toFixed(2)}}}, scales:{ x:{ticks:{color:'#e2e8f0'}}, y:{ticks:{color:'#e2e8f0'}, beginAtZero:true} } },
+      plugins:['glow']
+    });
+
+    hoursChart = new Chart(hctx, {
+      type:'line',
+      data:{ labels, datasets:[{ label:'Hours Worked', data:hours, fill:true, borderColor:'#60a5fa', backgroundColor:hoursFill, tension:.35, pointRadius:3, pointHoverRadius:4, pointBackgroundColor:'#38bdf8' }]},
+      options:{ responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>`${ctx.raw.toFixed(2)} h`}}}, scales:{ x:{ticks:{color:'#e2e8f0'}}, y:{ticks:{color:'#e2e8f0'}, beginAtZero:true} } },
+      plugins:['glow']
+    });
+  }
+
+  document.getElementById('exportClose').onclick = ()=>{ exportBackdrop.classList.remove('show'); };
+
+  document.getElementById('start').onclick = startTimer;
+  document.getElementById('stop').onclick  = stopTimer;
+  document.getElementById('clear').onclick = clearTimer;
+
+  function toggleMenu(forceOpen){
+    const willOpen = typeof forceOpen === 'boolean' ? forceOpen : !menuPanel.classList.contains('show');
+    menuPanel.classList.toggle('show', willOpen);
+    menuPanel.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+    menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    syncOverlays();
+  }
+  menuBtn.onclick = ()=> toggleMenu();
+  closeMenu.onclick = ()=> toggleMenu(false);
+
+  menuGoals.onclick    = ()=>{ toggleMenu(false); openGoals(); syncOverlays(); };
+  menuSummary.onclick  = ()=>{ alert('Summary: coming next.'); };
+  menuCalc.onclick     = ()=>{ alert('Calculator: coming next.'); };
+  menuExpenses.onclick = ()=>{ toggleMenu(false); openExpenses(); syncOverlays(); };
+
+  document.getElementById('goalsClose').onclick = ()=> { closeGoals(); syncOverlays(); };
+
+  /* 🔒 Hide Menu/History/Stats while History panel is open */
+  function setMainButtonsVisible(show){
+    const disp = show ? 'inline-flex' : 'none';
+    menuBtn.style.display = disp;
+    historyBtn.style.display = disp;
+    statsBtn.style.display = disp;
+  }
+
+  historyBtn.onclick = ()=>{
+    updateTotals();
+    historyPanel.classList.toggle('show');
+    historyPanel.setAttribute('aria-hidden', historyPanel.classList.contains('show')?'false':'true');
+    syncOverlays();
+  };
+  closeHistory.onclick = ()=>{
+    historyPanel.classList.remove('show');
+    historyPanel.setAttribute('aria-hidden','true');
+    syncOverlays();
+  };
+
+  discardBtn.onclick = ()=>{ saveBackdrop.classList.remove('show'); vibrate(8); playSound(350, 50); syncOverlays(); };
+  saveBtn.onclick = ()=>{ saveHistory(); syncOverlays(); };
+
+  editCancel.onclick = ()=>{ editBackdrop.classList.remove('show'); editingId=null; syncOverlays(); };
+  editSave.onclick = ()=>{ applyEdit(); syncOverlays(); };
+
+  confirmNo.onclick = ()=>{ confirmBackdrop.classList.remove('show'); pendingDeleteId=null; syncOverlays(); };
+  confirmYes.onclick = ()=>{
+    if (pendingDeleteId){
+      history = history.filter(h=>String(h.id)!==String(pendingDeleteId));
+      saveHistoryStore();
+      renderHistory(); updateTotals(); vibrate(15); playSound(500, 60);
+    }
+    pendingDeleteId = null;
+    confirmBackdrop.classList.remove('show');
+    syncOverlays();
+  };
+
+  function openSettings(){ themeSelect.value=prefs.theme; soundToggle.checked=prefs.sound; hapticsToggle.checked=prefs.haptics; settingsBackdrop.classList.add('show'); syncOverlays(); }
+  settingsBtnFloat.onclick = openSettings;
+  settingsClose.onclick = ()=>{ settingsBackdrop.classList.remove('show'); syncOverlays(); };
+  settingsSave.onclick = ()=>{
+    prefs.theme = themeSelect.value === 'light' ? 'light' : 'dark';
+    prefs.sound = !!soundToggle.checked;
+    prefs.haptics = !!hapticsToggle.checked;
+    applyTheme(); savePrefs();
+    settingsBackdrop.classList.remove('show');
+    vibrate(8); playSound(700, 70);
+    syncOverlays();
+  };
+  settingsBackdrop.addEventListener('click', (e)=>{ if (e.target===settingsBackdrop){ settingsBackdrop.classList.remove('show'); syncOverlays(); } });
+
+  startAtBtn.onclick = ()=>{ startAtInput.value = toLocalInput(Date.now()); startAtBackdrop.classList.add('show'); syncOverlays(); };
+  document.getElementById('startAtCancel').onclick = ()=>{ startAtBackdrop.classList.remove('show'); syncOverlays(); };
+  document.getElementById('startAtSave').onclick = ()=>{
+    const val = startAtInput.value; if (!val){ alert('Pick a valid date/time.'); return; }
+    const ts = fromLocalInput(val); const now = Date.now();
+    if (ts <= now){
+      startWallTs = ts; elapsed = now - ts; startTime = now - elapsed; running = true;
+      startInterval(); vibrate(12); playSound(1200, 80);
+      scheduledStartTs = null; saveState(); updateDisplays(elapsed);
+    } else {
+      scheduledStartTs = ts; startWallTs = ts; elapsed = 0; running = false;
+      if (interval){ clearInterval(interval); interval=null; } updateDisplays(0);
+      vibrate(8); playSound(900, 70); saveState();
+    }
+    startAtBackdrop.classList.remove('show'); syncOverlays();
+  };
+
+  stopAtBtn.onclick = ()=>{ stopAtInput.value = toLocalInput(Date.now()); stopAtBackdrop.classList.add('show'); syncOverlays(); };
+  document.getElementById('stopAtCancel').onclick = ()=>{ stopAtBackdrop.classList.remove('show'); syncOverlays(); };
+  document.getElementById('stopAtSave').onclick = ()=>{
+    const val = stopAtInput.value; if (!val){ alert('Pick a valid date/time.'); return; }
+    if (!startWallTs){ alert('No active session to stop.'); return; }
+    const ts = fromLocalInput(val); const now = Date.now();
+    if (ts <= now){
+      finalizeActiveBreak();
+      running = false; if (interval){ clearInterval(interval); interval=null; }
+      endWallTs = ts; elapsed = Math.max(0, endWallTs - startWallTs); updateDisplays(elapsed);
+      saveState(); saveBackdrop.classList.add('show'); vibrate(16); playSound(600, 90);
+      scheduledStopTs = null;
+    } else {
+      scheduledStopTs = ts; vibrate(8); playSound(800, 70); saveState();
+    }
+    stopAtBackdrop.classList.remove('show'); syncOverlays();
+  };
+
+  takeBreakBtn.onclick = ()=>{
+    if (onBreak) return;
+    if (running){ running = false; if (interval){ clearInterval(interval); interval=null; } }
+    onBreak = true;
+    breakStartTs = Date.now();
+    showBreak();
+    startBreakTicker();
+    breakSummary.classList.remove('show');
+    breakSummary.textContent = "";
+    saveState();
+    vibrate(12); playSound(500, 90);
+  };
+
+  endBreakBtn.onclick = ()=>{
+    if (!onBreak) return;
+    const now = Date.now();
+    const dur = now - breakStartTs;
+    sessionBreakMs += Math.max(0, dur);
+    onBreak = false;
+    if (breakTicker){ clearInterval(breakTicker); breakTicker=null; }
+    breakDisplay.classList.remove('show');
+    breakSummary.textContent = `Break taken: ${humanShort(sessionBreakMs)}`;
+    breakSummary.classList.add('show');
+    startTime = now - elapsed;
+    running = true;
+    startInterval();
+    saveState();
+    vibrate(14); playSound(900, 80);
+  };
+
+  [startAtBackdrop, stopAtBackdrop, exportBackdrop, confirmBackdrop, editBackdrop, saveBackdrop].forEach(el=>{
+    el.addEventListener('click', (e)=>{ if (e.target===el){ el.classList.remove('show'); syncOverlays(); } });
+  });
+
+  /* ===== Inbox gating ===== */
+  function anyOverlayOpen(){
+    return (
+      menuPanel.classList.contains('show') ||
+      historyPanel.classList.contains('show') ||
+      goalsPanel.classList.contains('show') ||
+      statsBackdrop.classList.contains('show') ||
+      settingsBackdrop.classList.contains('show') ||
+      saveBackdrop.classList.contains('show') ||
+      editBackdrop.classList.contains('show') ||
+      confirmBackdrop.classList.contains('show') ||
+      startAtBackdrop.classList.contains('show') ||
+      stopAtBackdrop.classList.contains('show') ||
+      exportBackdrop.classList.contains('show') ||
+      expensesPanel.classList.contains('show') ||
+      inboxPanel.classList.contains('show')
+    );
+  }
+  function isMainScreen(){ return !anyOverlayOpen(); }
+  function refreshInboxBtnVisibility(){
+    inboxBtn.style.display = isMainScreen() ? 'inline-flex' : 'none';
+    inboxBtn.setAttribute('aria-expanded', inboxPanel.classList.contains('show') ? 'true' : 'false');
+  }
+  function openInbox(){
+    if (!isMainScreen()) return;
+    inboxPanel.classList.add('show');
+    inboxPanel.setAttribute('aria-hidden','false');
+    inboxBtn.setAttribute('aria-expanded','true');
+    syncOverlays();
+  }
+  function closeInboxPanel(){
+    inboxPanel.classList.remove('show');
+    inboxPanel.setAttribute('aria-hidden','true');
+    inboxBtn.setAttribute('aria-expanded','false');
+    syncOverlays();
+  }
+  inboxBtn.onclick = ()=>{ if (isMainScreen()) openInbox(); };
+  closeInbox.onclick = closeInboxPanel;
+
+  function observeOverlay(el){
+    if (!el) return;
+    new MutationObserver(()=>{ syncOverlays(); }).observe(el, { attributes:true, attributeFilter:['class','style'] });
+  }
+  [menuPanel, historyPanel, goalsPanel, statsBackdrop, settingsBackdrop,
+   saveBackdrop, editBackdrop, confirmBackdrop, startAtBackdrop, stopAtBackdrop, exportBackdrop, expensesPanel, inboxPanel]
+   .forEach(observeOverlay);
+
+  /* 🔒 Centralized sync: toggle blocker + inbox gating + hide main buttons on History */
+  function syncOverlays(){
+    const open = anyOverlayOpen();
+    blocker.style.display = open ? 'block' : 'none';
+    const histOpen = historyPanel.classList.contains('show');
+    setMainButtonsVisible(!histOpen);
+    refreshInboxBtnVisibility();
+  }
+  blocker.addEventListener('click', (e)=>{ e.stopPropagation(); });
+
+  /* ===== Expenses (continues in PART 2) ===== */
+  const CATEGORY_KEYWORDS = [
+    {cat:'Groceries', words:['walmart','target','aldi','kroger','publix','safeway','food lion','trader joe','whole foods','grocery']},
+    {cat:'Restaurants', words:['restaurant','diner','cafe','bistro','grill','pizza','taco','sub','burger','mcdonald','kfc','chick-fil-a','chipotle','shake shack','popeyes','wendy','bk','domino']},
+    {cat:'Bars & Nightlife', words:['bar','pub','brew','taproom','saloon','club','night']},
+    {cat:'Subscriptions', words:['netflix','spotify','hulu','disney','max','apple tv','prime video','youtube','xbox','playstation','icloud','dropbox','adobe']},
+    {cat:'Bills & Utilities', words:['electric','power','water','gas co','utility','internet','fiber','mobile','phone','comcast','xfinity','att','verizon','spectrum']},
+    {cat:'Auto & Gas', words:['shell','bp','chevron','exxon','7-eleven','circle k','speedway','marathon','gas','oil change','jiffy lube']},
+    {cat:'Healthcare', words:['pharmacy','walgreens','cvs','rite aid','clinic','dental','hospital','urgent care']},
+    {cat:'Entertainment', words:['cinema','theater','concert','ticketmaster','amc','regal','event']},
+    {cat:'Shopping', words:['amazon','best buy','walmart.com','ebay','mall','outlet','foot locker','nike','adidas']},
+    {cat:'Travel', words:['airlines','hotel','airbnb','lyft','uber','booking','expedia','delta','united','southwest','american airlines']}
+  ];
+  function guessCategory(merchant){
+    const q = (merchant||'').toLowerCase();
+    for (const row of CATEGORY_KEYWORDS){
+      if (row.words.some(w=>q.includes(w))) return row.cat;
+    }
+    return 'Other';
+  }
+
+  function openExpenses(){
+    xpDate.value = new Date().toISOString().slice(0,10);
+    expensesPanel.classList.add('show');
+    expensesPanel.setAttribute('aria-hidden','false');
+    renderExpensesUI();
+    syncOverlays();
+  }
+  function closeExpensesPanel(){
+    expensesPanel.classList.remove('show');
+    expensesPanel.setAttribute('aria-hidden','true');
+    syncOverlays();
+  }
+  closeExpenses.onclick = closeExpensesPanel;
+
+  xpMerchant.addEventListener('blur', ()=>{
+    if (!xpCategory.value || xpCategory.value === 'Other'){
+      xpCategory.value = guessCategory(xpMerchant.value);
+    }
+  });
+
+  xpAddBtn.onclick = ()=>{
+    const amt = +(+xpAmount.value||0).toFixed(2);
+    const dateStr = xpDate.value;
+    const merch = (xpMerchant.value||'').trim();
+    const cat = xpCategory.value || guessCategory(merch);
+    const note = (xpNote.value||'').trim();
+    if (!(amt>0) || !dateStr){ alert('Enter amount and date.'); return; }
+    const ts = new Date(dateStr+'T12:00:00').getTime();
+    const it = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), ts, amount:amt, merchant: merch || 'Unknown', category: cat, note };
+    expenses.unshift(it);
+    saveExpenses();
+    xpAmount.value=''; xpMerchant.value=''; xpNote.value='';
+    renderExpensesUI();
+    vibrate(12); playSound(950, 70);
+  };
+
+  xpImportBtn.onclick = ()=>{
+    const lines = prompt('Paste lines: YYYY-MM-DD, Merchant, Amount[, Category]');
+    if (!lines) return;
+    const arr = lines.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    let imported = 0;
+    for (const line of arr){
+      const parts = line.split(',').map(s=>s.trim());
+      if (parts.length < 3) continue;
+      const [d, m, a, c] = parts;
+      const ts = new Date(d+'T12:00:00').getTime();
+      const amount = +(+a||0).toFixed(2);
+      if (!(isFinite(ts) && amount>0)) continue;
+      const cat = c || guessCategory(m);
+      expenses.unshift({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts, amount, merchant:m, category:cat, note:'' });
+      imported++;
+    }
+    if (imported) { saveExpenses(); renderExpensesUI(); vibrate(20); playSound(1100, 80); }
+    else alert('No valid rows found.');
+  };
+
+  xpClearMonthBtn.onclick = ()=>{
+    const now = new Date();
+    const m0 = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const m1 = new Date(now.getFullYear(), now.getMonth()+1, 1).getTime();
+    if (!confirm('Delete all expenses for the current month?')) return;
+    const before = expenses.length;
+    expenses = expenses.filter(e=> !(e.ts>=m0 && e.ts<m1));
+    saveExpenses(); renderExpensesUI();
+    alert(`Removed ${before - expenses.length} item(s).`);
+  };
+
+  function renderExpensesUI(){
+    const now = new Date();
+    const m0 = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const m1 = new Date(now.getFullYear(), now.getMonth()+1, 1).getTime();
+
+    const monthItems = expenses.filter(e=>e.ts>=m0 && e.ts<m1);
+    const total = monthItems.reduce((a,b)=>a+b.amount,0);
+
+    const catMap = {};
+    for (const e of monthItems){ catMap[e.category] = (catMap[e.category]||0) + e.amount; }
+    const catEntries = Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+    const top = catEntries[0] || ['—',0];
+
+    xpMonthSpend.textContent = fmtMoney(total);
+    const planned = Object.values(budgets).reduce((a,b)=>a+(+b||0),0) || 0;
+    if (planned>0){
+      const pct = Math.min(9999, Math.max(0, total/planned*100)).toFixed(0);
+      const cls = total <= planned*0.8 ? 'budget-ok' : total <= planned ? 'budget-warn' : 'budget-bad';
+      xpBudgetHint.innerHTML = `Planned: ${fmtMoney(planned)} • <span class="${cls}">${pct}%</span> of budget`;
+    } else {
+      xpBudgetHint.textContent = 'No budget set';
+    }
+
+    xpTopCat.textContent = top[0];
+    xpTopCatShare.textContent = top[1] ? `${fmtMoney(top[1])} (${(top[1]/Math.max(1,total)*100).toFixed(1)}%)` : '—';
+
+    xpList.innerHTML = '';
+    monthItems.sort((a,b)=>b.ts-a.ts).forEach(e=>{
+      const row = document.createElement('div');
+      row.className = 'xp-item';
+      row.innerHTML = `
+        <div>
+          <div class="m">${e.merchant} • <span class="c">${e.category}</span></div>
+          <div class="c">${humanDate(e.ts)} ${e.note ? '• '+e.note : ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="amt">-${fmtMoney(e.amount)}</div>
+          <div class="xp-row-actions">
+            <button class="btn-mini edit" data-xp-edit="${e.id}">Edit</button>
+            <button class="btn-mini danger" data-xp-del="${e.id}">Del</button>
+          </div>
+        </div>
+      `;
+      xpList.appendChild(row);
+    });
+
+    xpList.querySelectorAll('[data-xp-del]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.getAttribute('data-xp-del');
+        expenses = expenses.filter(x=>x.id!==id);
+        saveExpenses(); renderExpensesUI();
+      };
+    });
+    xpList.querySelectorAll('[data-xp-edit]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.getAttribute('data-xp-edit');
+        const it = expenses.find(x=>x.id===id);
+        if (!it) return;
+        const nd = prompt('Edit date (YYYY-MM-DD):', new Date(it.ts).toISOString().slice(0,10)); if (!nd) return;
+        const nm = prompt('Edit merchant:', it.merchant); if (nm===null) return;
+        const na = prompt('Edit amount:', String(it.amount)); if (na===null) return;
+        const nc = prompt('Edit category:', it.category) || it.category;
+        const nn = prompt('Edit note:', it.note ?? '') || '';
+        const ts = new Date(nd+'T12:00:00').getTime();
+        const amt = +(+na||0).toFixed(2);
+        if (!(isFinite(ts)&&amt>0)) { alert('Invalid values.'); return; }
+        it.ts = ts; it.merchant = nm.trim()||'Unknown'; it.amount = amt; it.category = nc; it.note = nn;
+        saveExpenses(); renderExpensesUI();
+      };
+    });
+
+    renderExpensesCharts(catEntries, monthSeries());
+    renderSuggestions(catEntries, monthItems);
+  }
+
+  function monthSeries(n=6){
+    const out = [];
+    const now = new Date();
+    for (let i=n-1;i>=0;i--){
+      const y = now.getFullYear(), m = now.getMonth()-i;
+      const d0 = new Date(y, m, 1).getTime();
+      const d1 = new Date(y, m+1, 1).getTime();
+      const sum = expenses.filter(e=>e.ts>=d0 && e.ts<d1).reduce((a,b)=>a+b.amount,0);
+      const label = new Date(y, m, 1).toLocaleString(undefined,{month:'short'});
+      out.push({label, sum});
+    }
+    return out;
+  }
+
+  function renderExpensesCharts(catEntries, series){
+    if (xpPie) xpPie.destroy();
+    const labels = catEntries.map(([k])=>k);
+    const data = catEntries.map(([,v])=>v);
+    const pieCtx = xpPieCanvas.getContext('2d');
+    xpPie = new Chart(pieCtx, {
+      type:'doughnut',
+      data:{labels, datasets:[{data, backgroundColor:[
+        '#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b','#ef4444','#22d3ee','#10b981','#f472b6','#94a3b8','#eab308'
+      ], borderColor:'#0b1224', borderWidth:2}]},
+      options:{cutout:'60%', plugins:{legend:{labels:{color:'#e2e8f0'}}}}
+    });
+
+    if (xpTrend) xpTrend.destroy();
+    const tctx = xpTrendCanvas.getContext('2d');
+    const labels2 = series.map(x=>x.label);
+    const sums = series.map(x=>+x.sum.toFixed(2));
+    const area = {top:0,bottom:180};
+    const g = tctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0,'rgba(239,68,68,0.35)'); g.addColorStop(1,'rgba(239,68,68,0.05)');
+    xpTrend = new Chart(tctx, {
+      type:'line',
+      data:{labels:labels2, datasets:[{ label:'Monthly spend', data:sums, borderColor:'#ef4444', backgroundColor:g, fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#f87171' }]},
+      options:{ plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>fmtMoney(ctx.raw)}}}, scales:{x:{ticks:{color:'#e2e8f0'}}, y:{ticks:{color:'#e2e8f0'}, beginAtZero:true} } },
+      plugins:['glow']
+    });
+  }
+
+  function renderSuggestions(catEntries, monthItems){
+    xpSuggestions.innerHTML = '';
+    if (!monthItems.length){ xpSuggestions.innerHTML = '<li>Add a few expenses to see insights.</li>'; return; }
+
+    const total = monthItems.reduce((a,b)=>a+b.amount,0);
+    const byMerchant = {};
+    for (const e of monthItems){ const key=e.merchant.toLowerCase(); byMerchant[key]=(byMerchant[key]||0)+e.amount; }
+    const topMerch = Object.entries(byMerchant).sort((a,b)=>b[1]-a[1])[0];
+
+    const add = s => { const li=document.createElement('li'); li.textContent=s; xpSuggestions.appendChild(li); };
+
+    const top = catEntries[0];
+    if (top){
+      const share = (top[1]/Math.max(1,total)*100).toFixed(1);
+      const b = (budgets[top[0]]||0);
+      if (b>0){
+        const cls = top[1] > b ? 'over' : 'within';
+        add(`${top[0]} is ${share}% of this month. You are ${cls} its budget (${fmtMoney(top[1])}/${fmtMoney(b)}).`);
+      } else {
+        add(`${top[0]} is ${share}% of this month. Consider setting a budget for it.`);
+      }
+    }
+
+    const subMerchants = ['netflix','spotify','hulu','disney','max','apple','adobe','xbox','playstation','icloud','youtube','patreon'];
+    const subs = monthItems.filter(e=>subMerchants.some(s=>e.merchant.toLowerCase().includes(s)));
+    if (subs.length){
+      const s = subs.map(e=>`${e.merchant} ${fmtMoney(e.amount)}`).join(', ');
+      add(`Recurring suspects: ${s}. Verify if you still use them.`);
+    }
+
+    const map = Object.fromEntries(catEntries);
+    const rest = map['Restaurants']||0;
+    const bars  = map['Bars & Nightlife']||0;
+    const groc  = map['Groceries']||0;
+    if (rest + bars > groc * 0.8 && (rest+bars) > 150){
+      add(`Dining/nightlife (${fmtMoney(rest+bars)}) is rivaling groceries (${fmtMoney(groc)}). Try 1–2 cook-at-home days.`);
+    }
+
+    const thisWeekStart = (()=>{
+      const d = new Date(); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return +x;
+    })();
+    const lastWeekStart = thisWeekStart - 7*86400000;
+    const thisWeek = expenses.filter(e=>e.ts>=thisWeekStart).reduce((a,b)=>a+b.amount,0);
+    const lastWeek = expenses.filter(e=>e.ts>=lastWeekStart && e.ts<thisWeekStart).reduce((a,b)=>a+b.amount,0);
+    if (lastWeek>0 && thisWeek > lastWeek*1.3 && thisWeek - lastWeek > 50){
+      add(`Spending is up ${((thisWeek/lastWeek-1)*100).toFixed(0)}% vs last week. Decide what to cut for the next 3 days.`);
+    }
+  }
+
+  function saveState(){
+    const state = {
+      running, startWallTs, endWallTs, elapsed,
+      rate: parseFloat(rateInput.value)||0,
+      lastSaved: Date.now(),
+      scheduledStartTs, scheduledStopTs,
+      onBreak, breakStartTs, sessionBreakMs
+    };
+    try{ localStorage.setItem(STORE_KEY_STATE, JSON.stringify(state)); }catch{}
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY_STATE);
+      if (!raw) return;
+      const s = JSON.parse(raw)||{};
+      if (typeof s.rate === 'number') rateInput.value = String(s.rate);
+      running = !!s.running;
+      startWallTs = typeof s.startWallTs === 'number' ? s.startWallTs : null;
+      endWallTs   = typeof s.endWallTs   === 'number' ? s.endWallTs   : null;
+      elapsed     = typeof s.elapsed     === 'number' ? s.elapsed     : 0;
+      scheduledStartTs = typeof s.scheduledStartTs === 'number' ? s.scheduledStartTs : null;
+      scheduledStopTs  = typeof s.scheduledStopTs  === 'number' ? s.scheduledStopTs  : null;
+      onBreak = !!s.onBreak;
+      breakStartTs = typeof s.breakStartTs === 'number' ? s.breakStartTs : null;
+      sessionBreakMs = typeof s.sessionBreakMs === 'number' ? s.sessionBreakMs : 0;
+
+      if (onBreak && breakStartTs){ showBreak(); startBreakTicker(); }
+      if (running && startWallTs){
+        const now = Date.now();
+        elapsed = Math.max(0, now - startWallTs);
+        startTime = now - elapsed;
+        update();
+        startInterval();
+      }else{
+        updateDisplays(elapsed);
+      }
+    }catch(e){}
+  }
+
+  loadPrefs(); applyTheme();
+  loadGoals();
+  loadHistoryStore(); renderHistory(); updateTotals();
+  loadBudgets();
+  loadExpenses();
+  loadState();
+
+  function refreshInboxBtnVisibility(){ /* keep latest */ 
+    inboxBtn.style.display = !anyOverlayOpen() ? 'inline-flex' : 'none';
+    inboxBtn.setAttribute('aria-expanded', inboxPanel.classList.contains('show') ? 'true' : 'false');
+  }
+
+  syncOverlays();
+  window.addEventListener('beforeunload', ()=>{ saveState(); savePrefs(); saveGoals(); saveBudgets(); saveExpenses(); });
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ saveState(); savePrefs(); saveGoals(); saveBudgets(); saveExpenses(); } });
+
+  setInterval(()=>{ update(); syncOverlays(); }, 1000/60);
+</script>
+</body>
+</html>
+
+
+
