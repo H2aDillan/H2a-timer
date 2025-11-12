@@ -8,7 +8,7 @@
 <!-- 🔄 Force fresh load -->
 <script>
 (function(){
-  const APP_VERSION = "24"; /* blocker update */
+  const APP_VERSION = "25"; /* bump to force reload */
   const KEY = "ver_guard_seen";
   try {
     const url  = new URL(location.href);
@@ -27,8 +27,18 @@
 
 <style>
   :root{
-    --bg:#0b1020; --panel:#111931; --panel-2:#0f172a; --text:#f8fafc; --muted:#94a3b8;
-    --green:#22c55e; --green-2:#16a34a; --cyan:#22d3ee; --blue:#60a5fa; --purple:#a78bfa; --amber:#f59e0b; --red:#ef4444;
+    --bg:#0b1020;
+    --panel:#111931;
+    --panel-2:#0f172a;
+    --text:#f8fafc;
+    --muted:#94a3b8;
+    --green:#22c55e;
+    --green-2:#16a34a;
+    --cyan:#22d3ee;
+    --blue:#60a5fa;
+    --purple:#a78bfa;
+    --amber:#f59e0b;
+    --red:#ef4444;
     --glow-soft: 0 0 12px rgba(34,197,94,.35), 0 0 24px rgba(34,197,94,.2);
     --glow-cyan: 0 0 12px rgba(34,211,238,.35), 0 0 24px rgba(34,211,238,.2);
     --glow-purple: 0 0 12px rgba(167,139,250,.35), 0 0 24px rgba(167,139,250,.2);
@@ -39,61 +49,175 @@
     background:radial-gradient(1200px 800px at 20% 10%, #0c1534 0%, #0b1020 40%, #070c19 100%);
     color:var(--text);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    height:100vh;margin:0;overflow:hidden
+    height:100vh;margin:0;overflow:hidden;
   }
-  .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px;z-index:5}
-  .rate-wrap{display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#1a2547,#121a35);border:1px solid #334155;border-radius:10px;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-  input[type="number"]{width:110px;padding:6px 6px;border:none;outline:none;font-size:16px;text-align:right;background:transparent;color:var(--text)}
-  .timer{font-size:3rem;margin-bottom:6px;text-shadow:0 0 12px rgba(96,165,250,.25)}
-  .amount{font-size:3rem;color:var(--green);margin-bottom:10px;text-shadow:0 0 16px rgba(34,197,94,.4)}
-  .break-timer{font-size:1.15rem;color:var(--red);margin-bottom:8px;display:none;text-shadow:0 0 12px rgba(239,68,68,.4)}
-  .break-timer.show{display:block}
-  .break-summary{font-size:.95rem;color:#eab308;background:linear-gradient(180deg,#3b3a1b,#2b2a12);border:1px solid #534f1a;padding:6px 10px;border-radius:999px;display:none;margin-bottom:10px;box-shadow:0 8px 18px rgba(0,0,0,.25)}
-  .break-summary.show{display:inline-block}
-  .buttons{display:flex;gap:10px;margin-bottom:10px}
-  .buttons2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:min(460px,90vw)}
-  .buttons2 button{width:100%}
-  button{background:linear-gradient(180deg,#27457e,#1a2f59);border:1px solid #314978;color:#fff;padding:12px 24px;border-radius:12px;font-size:16px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.25);transition:transform .06s ease, box-shadow .12s ease, filter .12s ease}
-  button:active{transform:translateY(1px);filter:brightness(.95)}
-  #start{background:linear-gradient(180deg,#1f9b4a,#137a38);border-color:#198e41;box-shadow:0 10px 24px rgba(0,0,0,.25), 0 0 24px rgba(34,197,94,.25)}
-  #stop{background:linear-gradient(180deg,#b91c1c,#7f1d1d);border-color:#991b1b}
-  #clear{background:linear-gradient(180deg,#475569,#334155);border-color:#475569}
 
-  #historyBtn,#statsBtn{position:fixed;bottom:20px;background:linear-gradient(180deg,#17233f,#0f1a35);color:#fff;border:1px solid #2a3a64;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s;z-index:25}
-  #historyBtn:hover,#statsBtn:hover{background:#1b2a52}
+  .top{
+    position:absolute;top:20px;left:20px;
+    display:flex;align-items:center;gap:8px;z-index:5;
+  }
+  .rate-wrap{
+    display:flex;align-items:center;gap:8px;
+    background:linear-gradient(180deg,#1a2547,#121a35);
+    border:1px solid #334155;border-radius:10px;
+    padding:6px 8px;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+  }
+  input[type="number"]{
+    width:110px;padding:6px 6px;border:none;outline:none;
+    font-size:16px;text-align:right;background:transparent;color:var(--text);
+  }
+
+  .timer{
+    font-size:3rem;margin-bottom:6px;
+    text-shadow:0 0 12px rgba(96,165,250,.25);
+  }
+  .amount{
+    font-size:3rem;color:var(--green);margin-bottom:10px;
+    text-shadow:0 0 16px rgba(34,197,94,.4);
+  }
+  .break-timer{
+    font-size:1.15rem;color:var(--red);margin-bottom:8px;
+    display:none;text-shadow:0 0 12px rgba(239,68,68,.4);
+  }
+  .break-timer.show{display:block}
+  .break-summary{
+    font-size:.95rem;color:#eab308;
+    background:linear-gradient(180deg,#3b3a1b,#2b2a12);
+    border:1px solid #534f1a;padding:6px 10px;border-radius:999px;
+    display:none;margin-bottom:10px;
+    box-shadow:0 8px 18px rgba(0,0,0,.25);
+  }
+  .break-summary.show{display:inline-block}
+
+  .buttons{display:flex;gap:10px;margin-bottom:10px}
+  .buttons2{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+    width:min(460px,90vw);
+  }
+  .buttons2 button{width:100%}
+  button{
+    background:linear-gradient(180deg,#27457e,#1a2f59);
+    border:1px solid #314978;color:#fff;
+    padding:12px 24px;border-radius:12px;
+    font-size:16px;cursor:pointer;
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
+    transition:transform .06s ease, box-shadow .12s ease, filter .12s ease;
+  }
+  button:active{transform:translateY(1px);filter:brightness(.95)}
+  #start{
+    background:linear-gradient(180deg,#1f9b4a,#137a38);
+    border-color:#198e41;
+    box-shadow:0 10px 24px rgba(0,0,0,.25), 0 0 24px rgba(34,197,94,.25);
+  }
+  #stop{
+    background:linear-gradient(180deg,#b91c1c,#7f1d1d);
+    border-color:#991b1b;
+  }
+  #clear{
+    background:linear-gradient(180deg,#475569,#334155);
+    border-color:#475569;
+  }
+
+  #historyBtn,#statsBtn,#menuBtn{
+    position:fixed;bottom:20px;
+    background:linear-gradient(180deg,#17233f,#0f1a35);
+    color:#fff;border:1px solid #2a3a64;
+    border-radius:30px;padding:12px 18px;font-size:16px;
+    cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+    transition:background .2s, box-shadow .2s;z-index:25;
+  }
+  #historyBtn:hover,#statsBtn:hover,#menuBtn:hover{background:#1b2a52}
   #historyBtn{left:50%;transform:translateX(-50%)}
-  #historyBtn.flash{background:#14532d !important;box-shadow:0 0 0 6px rgba(34,197,94,.25)}
+  #historyBtn.flash{
+    background:#14532d !important;
+    box-shadow:0 0 0 6px rgba(34,197,94,.25);
+  }
   .book{width:18px;height:18px;fill:#eab308}
-  #statsBtn{right:20px;box-shadow:var(--glow-soft)}
+  #statsBtn{
+    right:20px;box-shadow:var(--glow-soft);
+  }
   #statsBtn svg{width:20px;height:20px}
   #statsBtn path{stroke:var(--green)}
-  #menuBtn{position:fixed;bottom:20px;left:20px;background:linear-gradient(180deg,#17233f,#0f1a35);color:#fff;border:1px solid #2a3a64;border-radius:30px;padding:12px 18px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s, box-shadow .2s;z-index:25}
-  #menuBtn:hover{background:#1b2a52}
+  #menuBtn{left:20px}
   .hamburger svg{width:18px;height:18px}
 
-  #menuPanel{position:fixed;top:0;left:-75%;width:75%;height:100%;max-width:420px;background:linear-gradient(180deg,#0e172d,#0a1326);border-right:2px solid #2b3f6f;border-radius:0 12px 12px 0;transition:left .3s;display:flex;flex-direction:column;z-index:30;box-shadow:0 0 40px rgba(0,0,0,.45)}
+  /* Menu */
+  #menuPanel{
+    position:fixed;top:0;left:-75%;width:75%;height:100%;max-width:420px;
+    background:linear-gradient(180deg,#0e172d,#0a1326);
+    border-right:2px solid #2b3f6f;border-radius:0 12px 12px 0;
+    transition:left .3s;display:flex;flex-direction:column;
+    z-index:30;box-shadow:0 0 40px rgba(0,0,0,.45);
+  }
   #menuPanel.show{left:0}
-  #menuHeader{background:#0b1224;padding:12px 16px;border-radius:0 12px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2b3f6f}
+  #menuHeader{
+    background:#0b1224;padding:12px 16px;border-radius:0 12px 0 0;
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid #2b3f6f;
+  }
   #menuHeader .title{display:inline-flex;align-items:center;gap:8px}
   #menuHeader h3{margin:0;font-size:18px}
-  #closeMenu{background:#dc2626;border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}
-  #menuContent{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
-  .menu-item{background:linear-gradient(180deg,#0f1a34,#0b1224);border:1px solid #2a3a64;border-radius:12px;padding:12px 14px;font-size:15px;color:#e2e8f0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.25)}
+  #closeMenu{
+    background:#dc2626;border:none;color:#fff;
+    border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;
+  }
+  #menuContent{
+    padding:12px 16px;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .menu-item{
+    background:linear-gradient(180deg,#0f1a34,#0b1224);
+    border:1px solid #2a3a64;border-radius:12px;
+    padding:12px 14px;font-size:15px;color:#e2e8f0;
+    display:flex;justify-content:space-between;align-items:center;
+    cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.25);
+  }
   .menu-item .r{opacity:.7}
-  #settingsBtnFloat{position:absolute;right:20px;bottom:20px;background:#0ea5e9;border:1px solid #0284c7;color:#0b1020;border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer;box-shadow:var(--glow-cyan)}
-  #settingsBtnFloat:hover{filter:brightness(1.05)}
+  #settingsBtnFloat{
+    position:absolute;right:20px;bottom:20px;
+    background:#0ea5e9;border:1px solid #0284c7;color:#0b1020;
+    border-radius:10px;padding:10px 14px;font-size:14px;
+    cursor:pointer;box-shadow:var(--glow-cyan);
+  }
 
-  #goalsPanel{position:fixed;inset:0;background:radial-gradient(1200px 800px at 80% 0%, #0e1b3a 0%, #0b1224 50%, #09101f 100%);display:none;flex-direction:column;z-index:40}
+  /* Goals */
+  #goalsPanel{
+    position:fixed;inset:0;
+    background:radial-gradient(1200px 800px at 80% 0%, #0e1b3a 0%, #0b1224 50%, #09101f 100%);
+    display:none;flex-direction:column;z-index:40;
+  }
   #goalsPanel.show{display:flex}
-  #goalsHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #2b3f6f;background:#0b1224}
+  #goalsHeader{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid #2b3f6f;background:#0b1224;
+  }
   #goalsHeader h3{margin:0;font-size:18px}
-  #goalsClose{background:#64748b;border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
-  #goalsBody{padding:12px 16px;display:flex;flex-direction:column;gap:16px;overflow:auto;flex:1}
-  .goal-card{background:linear-gradient(180deg,#0f172a,#0c1426);border:1px solid #2b3f6f;border-radius:14px;padding:14px;box-shadow:0 12px 24px rgba(0,0,0,.28)}
-  .goal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  #goalsClose{
+    background:#64748b;border:none;color:#fff;
+    border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;
+  }
+  #goalsBody{
+    padding:12px 16px;display:flex;flex-direction:column;
+    gap:16px;overflow:auto;flex:1;
+  }
+  .goal-card{
+    background:linear-gradient(180deg,#0f172a,#0c1426);
+    border:1px solid #2b3f6f;border-radius:14px;
+    padding:14px;box-shadow:0 12px 24px rgba(0,0,0,.28);
+  }
+  .goal-top{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:10px;
+  }
   .goal-title{font-weight:800}
   .goal-values{font-size:13px;color:var(--muted)}
-  .goal-bar{height:18px;background:linear-gradient(180deg,#0a1326,#0c1833);border:1px solid #23345e;border-radius:999px;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04)}
+  .goal-bar{
+    height:18px;background:linear-gradient(180deg,#0a1326,#0c1833);
+    border:1px solid #23345e;border-radius:999px;
+    overflow:hidden;position:relative;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
   .goal-fill{
     height:100%;width:0%;
     background:
@@ -104,377 +228,834 @@
     background-position: var(--wave1,0px) 0, var(--wave2,0px) 0, 0 0;
     filter:saturate(1.25);
     box-shadow:0 0 18px rgba(34,197,94,.55),0 0 38px rgba(34,197,94,.28),inset 0 0 10px rgba(255,255,255,.12);
-    transition:width .05s linear;position:relative;will-change:width,background-position;
+    transition:width .05s linear;position:relative;
   }
   .goal-fill::after{
     content:"";position:absolute;top:-60%;bottom:-60%;width:100px;left:-100px;
     background:radial-gradient(60px 140px at 0% 50%, rgba(255,255,255,.35), rgba(255,255,255,0) 70%);
     mix-blend-mode:screen;filter:blur(.5px);animation:shimmer 1.6s ease-in-out infinite;
   }
-  @keyframes shimmer{0%{left:-100px;opacity:0}30%{opacity:.5}60%{left:20px;opacity:.25}100%{left:140px;opacity:0}}
-  .goal-fill[data-pct="90"],.goal-fill[data-pct="91"],.goal-fill[data-pct="92"],.goal-fill[data-pct="93"],.goal-fill[data-pct="94"],.goal-fill[data-pct="95"],.goal-fill[data-pct="96"],.goal-fill[data-pct="97"],.goal-fill[data-pct="98"],.goal-fill[data-pct="99"],.goal-fill[data-pct="100"]{animation:nearDonePulse 1.2s ease-in-out infinite;}
+  @keyframes shimmer{
+    0%{left:-100px;opacity:0}
+    30%{opacity:.5}
+    60%{left:20px;opacity:.25}
+    100%{left:140px;opacity:0}
+  }
+  .goal-fill[data-pct="90"],
+  .goal-fill[data-pct="91"],
+  .goal-fill[data-pct="92"],
+  .goal-fill[data-pct="93"],
+  .goal-fill[data-pct="94"],
+  .goal-fill[data-pct="95"],
+  .goal-fill[data-pct="96"],
+  .goal-fill[data-pct="97"],
+  .goal-fill[data-pct="98"],
+  .goal-fill[data-pct="99"],
+  .goal-fill[data-pct="100"]{
+    animation:nearDonePulse 1.2s ease-in-out infinite;
+  }
   @keyframes nearDonePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
-  .goal-edit{display:flex;align-items:center;gap:8px;margin-top:10px}
+  .goal-edit{
+    display:flex;align-items:center;gap:8px;margin-top:10px;
+  }
   .goal-edit label{font-size:13px;color:var(--muted)}
-  .goal-edit input{flex:1;background:#0b1224;border:1px solid #2b3f6f;border-radius:10px;padding:10px 12px;color:var(--text)}
-  .goal-edit button{background:linear-gradient(180deg,#22c55e,#13a24a);border:1px solid #15803d;color:#05210f;padding:10px 12px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:var(--glow-soft)}
+  .goal-edit input{
+    flex:1;background:#0b1224;border:1px solid #2b3f6f;
+    border-radius:10px;padding:10px 12px;color:var(--text);
+  }
+  .goal-edit button{
+    background:linear-gradient(180deg,#22c55e,#13a24a);
+    border:1px solid #15803d;color:#05210f;
+    padding:10px 12px;border-radius:10px;font-weight:700;
+    cursor:pointer;box-shadow:var(--glow-soft);
+  }
 
-  #historyPanel{position:fixed;bottom:-75%;left:0;width:100%;max-height:75%;background:linear-gradient(180deg,#0f172a,#0b1224);color:var(--text);border-top:2px solid #2b3f6f;border-radius:12px 12px 0 0;padding:0;transition:bottom .3s;display:flex;flex-direction:column;z-index:40;box-shadow:0 -8px 28px rgba(0,0,0,.4)}
+  /* History */
+  #historyPanel{
+    position:fixed;bottom:-75%;left:0;width:100%;max-height:75%;
+    background:linear-gradient(180deg,#0f172a,#0b1224);
+    color:var(--text);border-top:2px solid #2b3f6f;
+    border-radius:12px 12px 0 0;padding:0;
+    transition:bottom .3s;display:flex;flex-direction:column;
+    z-index:40;box-shadow:0 -8px 28px rgba(0,0,0,.4);
+  }
   #historyPanel.show{bottom:0}
-  #historyHeader{background:#0b1224;padding:12px 16px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2b3f6f}
+  #historyHeader{
+    background:#0b1224;padding:12px 16px;border-radius:12px 12px 0 0;
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid #2b3f6f;
+  }
   #historyHeader .title{display:inline-flex;align-items:center;gap:8px}
   #historyHeader h3{margin:0;font-size:18px}
-  #closeHistory{background:#dc2626;border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}
-  #totals{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px;border-bottom:1px solid #2b3f6f}
-  .card{background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:12px}
+  #closeHistory{
+    background:#dc2626;border:none;color:#fff;
+    border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;
+  }
+  #totals{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+    padding:12px 16px;border-bottom:1px solid #2b3f6f;
+  }
+  .card{
+    background:linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:12px;padding:12px;
+  }
   .card .k{font-size:12px;color:var(--muted)}
-  .card .v{font-size:18px;font-weight:800;color:var(--green);text-shadow:0 0 12px rgba(34,197,94,.35)}
-  #historyList{list-style:none;padding:12px 16px;margin:0;overflow-y:auto;flex-grow:1}
-  #historyList li{background:linear-gradient(180deg,#0f172a,#101b36);border:1px solid #2b3f6f;border-radius:12px;padding:10px 12px;margin-bottom:10px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;box-shadow:0 8px 18px rgba(0,0,0,.25)}
+  .card .v{
+    font-size:18px;font-weight:800;color:var(--green);
+    text-shadow:0 0 12px rgba(34,197,94,.35);
+  }
+  #historyList{
+    list-style:none;padding:12px 16px;margin:0;
+    overflow-y:auto;flex-grow:1;
+  }
+  #historyList li{
+    background:linear-gradient(180deg,#0f172a,#101b36);
+    border:1px solid #2b3f6f;border-radius:12px;
+    padding:10px 12px;margin-bottom:10px;
+    display:grid;grid-template-columns:1fr auto;
+    gap:10px;align-items:center;
+    box-shadow:0 8px 18px rgba(0,0,0,.25);
+  }
   .meta{font-size:13px;color:var(--muted);margin-bottom:6px}
   .dur{font-size:15px;font-weight:bold}
-  .amt{color:var(--green);font-weight:bold;font-size:16px;text-shadow:0 0 12px rgba(34,197,94,.35)}
-  .tag{display:inline-block;margin-top:6px;font-size:12px;color:#eab308;background:#3b3a1b;border:1px solid #534f1a;padding:2px 6px;border-radius:999px}
+  .amt{
+    color:var(--green);font-weight:bold;font-size:16px;
+    text-shadow:0 0 12px rgba(34,197,94,.35);
+  }
+  .tag{
+    display:inline-block;margin-top:6px;font-size:12px;color:#eab308;
+    background:#3b3a1b;border:1px solid #534f1a;
+    padding:2px 6px;border-radius:999px;
+  }
   .row-actions{display:flex;flex-direction:column;gap:6px}
-  .btn-small{background:#1a274a;border:1px solid #2a3a64;color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}
+  .btn-small{
+    background:#1a274a;border:1px solid #2a3a64;color:#fff;
+    padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer;
+  }
   .btn-danger{background:#7f1d1d;border-color:#b91c1c}
-  .btn-export{background:#0ea5e9;border-color:#0284c7;box-shadow:var(--glow-cyan)}
+  .btn-export{
+    background:#0ea5e9;border-color:#0284c7;box-shadow:var(--glow-cyan);
+  }
 
-  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;opacity:0;transition:opacity .25s ease}
+  .backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);
+    display:none;align-items:center;justify-content:center;
+    z-index:50;opacity:0;transition:opacity .25s ease;
+  }
   .backdrop.show{display:flex;opacity:1}
-  .modal{background:linear-gradient(180deg,#0f172a,#0c1427);border:1px solid #2b3f6f;border-radius:14px;padding:16px;width:340px;max-width:92vw;box-shadow:0 12px 32px rgba(0,0,0,.45)}
+  .modal{
+    background:linear-gradient(180deg,#0f172a,#0c1427);
+    border:1px solid #2b3f6f;border-radius:14px;
+    padding:16px;width:340px;max-width:92vw;
+    box-shadow:0 12px 32px rgba(0,0,0,.45);
+  }
   .modal h3{margin:0 0 10px;text-align:center}
-  .field{display:flex;align-items:center;gap:8px;background:#0b1224;border:1px solid #2b3f6f;border-radius:10px;padding:8px 10px;margin-top:8px}
+  .field{
+    display:flex;align-items:center;gap:8px;
+    background:#0b1224;border:1px solid #2b3f6f;
+    border-radius:10px;padding:8px 10px;margin-top:8px;
+  }
   .actions{display:flex;gap:10px;margin-top:14px}
-  .actions button{flex:1;padding:10px;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
-  #discardBtn{background:#6b7280} #saveBtn{background:#22c55e}
-  input[type="datetime-local"]{background:transparent;border:none;outline:none;color:var(--text)}
-  #editCancel{background:#6b7280} #editSave{background:#22c55e}
-  #confirmYes{background:#dc2626} #confirmNo{background:#6b7280}
-  .setting-row{display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #2b3f6f;border-radius:10px;padding:10px 12px;margin-top:10px}
+  .actions button{
+    flex:1;padding:10px;border:none;border-radius:10px;
+    font-weight:bold;cursor:pointer;
+  }
 
-  #statsBackdrop{position:fixed;inset:0;background:rgba(3,6,14,.75);display:none;align-items:center;justify-content:center;z-index:50;opacity:0;transition:opacity .25s ease}
+  /* Stats modal */
+  #statsBackdrop{
+    position:fixed;inset:0;background:rgba(3,6,14,.75);
+    display:none;align-items:center;justify-content:center;
+    z-index:50;opacity:0;transition:opacity .25s ease;
+  }
   #statsBackdrop.show{display:flex;opacity:1}
-  #statsModal{background:linear-gradient(180deg,#0f172a,#0c1426);border:1px solid #2b3f6f;border-radius:18px;padding:20px;width:95%;max-width:820px;max-height:90vh;overflow-y:auto;box-shadow:0 40px 80px rgba(0,0,0,.5)}
-  .stats-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2b3f6f;padding-bottom:8px;margin-bottom:12px}
+  #statsModal{
+    background:linear-gradient(180deg,#0f172a,#0c1426);
+    border:1px solid #2b3f6f;border-radius:18px;
+    padding:20px;width:95%;max-width:820px;
+    max-height:90vh;overflow-y:auto;
+    box-shadow:0 40px 80px rgba(0,0,0,.5);
+  }
+  .stats-header{
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid #2b3f6f;padding-bottom:8px;margin-bottom:12px;
+  }
   .stats-header h3{margin:0;font-size:20px}
-  .stats-close{background:#22c55e;border:none;color:#0f172a;padding:8px 12px;border-radius:8px;font-weight:bold;cursor:pointer}
-  .stat-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
-  .stat-card{background:radial-gradient(200px 120px at 70% -20%, rgba(34,211,238,.18), transparent 60%), linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:12px;box-shadow:0 16px 28px rgba(0,0,0,.35)}
+  .stats-close{
+    background:#22c55e;border:none;color:#0f172a;
+    padding:8px 12px;border-radius:8px;font-weight:bold;cursor:pointer;
+  }
+  .stat-summary{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:12px;margin-bottom:12px;
+  }
+  .stat-card{
+    background:radial-gradient(200px 120px at 70% -20%, rgba(34,211,238,.18), transparent 60%),
+               linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:12px;
+    padding:12px;box-shadow:0 16px 28px rgba(0,0,0,.35);
+  }
   .stat-title{font-size:13px;color:var(--muted)}
-  .stat-value{font-size:22px;font-weight:800;color:var(--green);text-shadow:0 0 16px rgba(34,197,94,.5)}
-  .stat-card:nth-child(2) .stat-value{color:var(--cyan);text-shadow:0 0 16px rgba(34,211,238,.45)}
-  .stat-card:nth-child(3) .stat-value{color:var(--purple);text-shadow:0 0 16px rgba(167,139,250,.45)}
-  canvas{background:linear-gradient(180deg,#0b1224,#0f172a);border:1px solid #2b3f6f;border-radius:14px;margin-bottom:14px;box-shadow:0 12px 28px rgba(0,0,0,.35), 0 0 24px rgba(96,165,250,.15)}
+  .stat-value{
+    font-size:22px;font-weight:800;color:var(--green);
+    text-shadow:0 0 16px rgba(34,197,94,.5);
+  }
+  .stat-card:nth-child(2) .stat-value{
+    color:var(--cyan);text-shadow:0 0 16px rgba(34,211,238,.45);
+  }
+  .stat-card:nth-child(3) .stat-value{
+    color:var(--purple);text-shadow:0 0 16px rgba(167,139,250,.45);
+  }
+  canvas{
+    background:linear-gradient(180deg,#0b1224,#0f172a);
+    border:1px solid #2b3f6f;border-radius:14px;
+    margin-bottom:14px;
+    box-shadow:0 12px 28px rgba(0,0,0,.35), 0 0 24px rgba(96,165,250,.15);
+  }
 
-  /* ⬇️ Repurposed from “Break Analytics” → Tag Effectiveness */
-  .break-section{margin:12px 0 16px 0;background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:14px;padding:14px;box-shadow:0 0 15px rgba(34,197,94,.2)}
-  .break-title{font-size:18px;font-weight:800;color:var(--green);text-align:center;margin:0 0 8px 0;text-shadow:0 0 12px rgba(34,197,94,.5);letter-spacing:.3px}
-  .break-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;text-align:center}
-  .break-summary div{background:#0f172a;border:1px solid #2b3f6f;border-radius:12px;padding:10px;box-shadow:0 0 10px rgba(34,197,94,.18)}
-  .break-summary span{display:block;color:var(--green);font-weight:800;font-size:16px;margin-top:4px}
+  .break-section{
+    margin:12px 0 16px 0;
+    background:linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:14px;
+    padding:14px;box-shadow:0 0 15px rgba(34,197,94,.2);
+  }
+  .break-title{
+    font-size:18px;font-weight:800;color:var(--green);
+    text-align:center;margin:0 0 8px 0;
+    text-shadow:0 0 12px rgba(34,197,94,.5);letter-spacing:.3px;
+  }
+  .break-summary-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:10px;margin-top:10px;text-align:center;
+  }
+  .break-summary-grid div{
+    background:#0f172a;border:1px solid #2b3f6f;
+    border-radius:12px;padding:10px;
+    box-shadow:0 0 10px rgba(34,197,94,.18);
+  }
+  .break-summary-grid span{
+    display:block;color:var(--green);font-weight:800;
+    font-size:16px;margin-top:4px;
+  }
 
-  body.light{background:#f5f7fb;color:#0f172a}
-  body.light .stat-card, body.light #statsModal, body.light .goal-card, body.light .modal, body.light #historyPanel, body.light .menu-item{background:#ffffff;border-color:#e5e7eb}
-  body.light #historyList li{background:#ffffff;border-color:#e5e7eb}
-  body.light .field{background:#ffffff;border-color:#e5e7eb}
-  body.light .goal-bar{background:#eef2ff;border-color:#c7d2fe}
+  .analytics-info{
+    font-size:13px;color:var(--muted);
+    display:flex;flex-direction:column;gap:4px;
+  }
 
-  #inboxBtn{position:fixed;top:20px;right:20px;background:linear-gradient(180deg,#17233f,#0f1a35);color:#fff;border:1px solid #2a3a64;border-radius:20px;padding:10px 14px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s;z-index:35}
+  /* Inbox */
+  #inboxBtn{
+    position:fixed;top:20px;right:20px;
+    background:linear-gradient(180deg,#17233f,#0f1a35);
+    color:#fff;border:1px solid #2a3a64;
+    border-radius:20px;padding:10px 14px;font-size:14px;
+    cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+    transition:background .2s;z-index:35;
+  }
   #inboxBtn:hover{background:#1b2a52}
   #inboxBtn svg{width:18px;height:18px}
-  #inboxPanel{position:fixed;top:0;right:-75%;width:75%;max-width:420px;height:100%;background:linear-gradient(180deg,#0e172d,#0a1326);border-left:2px solid #2b3f6f;border-radius:12px 0 0 12px;transition:right .3s;display:flex;flex-direction:column;z-index:45}
+  #inboxPanel{
+    position:fixed;top:0;right:-75%;width:75%;max-width:420px;height:100%;
+    background:linear-gradient(180deg,#0e172d,#0a1326);
+    border-left:2px solid #2b3f6f;border-radius:12px 0 0 12px;
+    transition:right .3s;display:flex;flex-direction:column;z-index:45;
+  }
   #inboxPanel.show{right:0}
-  #inboxHeader{background:#0b1224;padding:12px 16px;border-bottom:1px solid #2b3f6f;display:flex;justify-content:space-between;align-items:center;border-radius:12px 0 0 0}
+  #inboxHeader{
+    background:#0b1224;padding:12px 16px;
+    border-bottom:1px solid #2b3f6f;
+    display:flex;justify-content:space-between;align-items:center;
+    border-radius:12px 0 0 0;
+  }
   #inboxHeader h3{margin:0;font-size:18px}
-  #closeInbox{background:#64748b;border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
-  #inboxBody{flex:1;display:flex;align-items:center;justify-content:center;padding:16px}
-  .inbox-empty{color:#94a3b8;font-size:15px;opacity:.9;text-align:center;background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:14px 18px;box-shadow:0 12px 24px rgba(0,0,0,.28)}
+  #closeInbox{
+    background:#64748b;border:none;color:#fff;
+    border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;
+  }
+  #inboxBody{
+    flex:1;display:flex;align-items:center;justify-content:center;padding:16px;
+  }
+  .inbox-empty{
+    color:#94a3b8;font-size:15px;opacity:.9;text-align:center;
+    background:linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:12px;
+    padding:14px 18px;box-shadow:0 12px 24px rgba(0,0,0,.28);
+  }
 
-  #expensesPanel{position:fixed;top:0;right:-75%;width:75%;max-width:520px;height:100%;background:linear-gradient(180deg,#0e172d,#0a1326);border-left:2px solid #2b3f6f;border-radius:12px 0 0 12px;transition:right .3s;display:flex;flex-direction:column;z-index:46;box-shadow:0 0 40px rgba(0,0,0,.45)}
+  /* Expenses */
+  #expensesPanel{
+    position:fixed;top:0;right:-75%;width:75%;max-width:520px;height:100%;
+    background:linear-gradient(180deg,#0e172d,#0a1326);
+    border-left:2px solid #2b3f6f;border-radius:12px 0 0 12px;
+    transition:right .3s;display:flex;flex-direction:column;
+    z-index:46;box-shadow:0 0 40px rgba(0,0,0,.45);
+  }
   #expensesPanel.show{right:0}
-  #expensesHeader{background:#0b1224;padding:12px 16px;border-bottom:1px solid #2b3f6f;display:flex;align-items:center;justify-content:space-between;border-radius:12px 0 0 0}
+  #expensesHeader{
+    background:#0b1224;padding:12px 16px;
+    border-bottom:1px solid #2b3f6f;
+    display:flex;align-items:center;justify-content:space-between;
+    border-radius:12px 0 0 0;
+  }
   #expensesHeader h3{margin:0;font-size:18px}
-  #closeExpenses{background:#64748b;border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
-  #expensesBody{flex:1;overflow:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
-  .xp-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:12px}
+  #closeExpenses{
+    background:#64748b;border:none;color:#fff;
+    border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;
+  }
+  #expensesBody{
+    flex:1;overflow:auto;padding:12px 16px;
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .xp-form{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;
+    background:linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:12px;padding:12px;
+  }
   .xp-form .full{grid-column:1/-1}
   .xp-form label{font-size:12px;color:var(--muted)}
-  .xp-form input,.xp-form select,.xp-form textarea{width:100%;background:#0b1224;border:1px solid #2b3f6f;border-radius:10px;padding:10px 12px;color:var(--text)}
+  .xp-form input,.xp-form select,.xp-form textarea{
+    width:100%;background:#0b1224;border:1px solid #2b3f6f;
+    border-radius:10px;padding:10px 12px;color:var(--text);
+  }
   .xp-form textarea{min-height:64px;resize:vertical}
   .xp-actions{display:flex;gap:10px}
-  .xp-primary{background:#22c55e;border:1px solid #15803d;color:#05210f;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer;box-shadow:var(--glow-soft)}
-  .xp-secondary{background:#0ea5e9;border:1px solid #0284c7;border-radius:10px;padding:10px 12px;cursor:pointer;box-shadow:var(--glow-cyan)}
+  .xp-primary{
+    background:#22c55e;border:1px solid #15803d;color:#05210f;
+    border-radius:10px;padding:10px 12px;font-weight:800;
+    cursor:pointer;box-shadow:var(--glow-soft);
+  }
+  .xp-secondary{
+    background:#0ea5e9;border:1px solid #0284c7;
+    border-radius:10px;padding:10px 12px;cursor:pointer;
+    box-shadow:var(--glow-cyan);
+  }
   .xp-cards{display:flex;gap:10px}
-  .xp-card{flex:1;background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:12px}
+  .xp-card{
+    flex:1;background:linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:12px;padding:12px;
+  }
   .xp-card .k{font-size:12px;color:var(--muted)}
   .xp-card .v{font-size:18px;font-weight:800}
-  .xp-list{background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:12px}
-  .xp-item{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px;border:1px solid #2b3f6f;border-radius:10px;margin-bottom:8px}
+  .xp-list{
+    background:linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:12px;padding:12px;
+  }
+  .xp-item{
+    display:grid;grid-template-columns:1fr auto;gap:8px;
+    padding:10px;border:1px solid #2b3f6f;border-radius:10px;
+    margin-bottom:8px;
+  }
   .xp-item .m{font-weight:700}
   .xp-item .c{font-size:12px;color:var(--muted)}
   .xp-item .amt{font-weight:800;color:#ef4444}
   .xp-row-actions{display:flex;gap:6px}
-  .btn-mini{background:#1a274a;border:1px solid #2a3a64;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer}
+  .btn-mini{
+    background:#1a274a;border:1px solid #2a3a64;
+    border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;
+  }
   .btn-mini.danger{background:#7f1d1d;border-color:#b91c1c}
   .btn-mini.edit{background:#15803d;border-color:#166534}
-  .xp-chart{background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:12px}
+  .xp-chart{
+    background:linear-gradient(180deg,#0f172a,#0b1224);
+    border:1px solid #2b3f6f;border-radius:12px;padding:12px;
+  }
   .xp-note{font-size:12px;color:var(--muted)}
-  .budget-ok{color:#22c55e} .budget-warn{color:#f59e0b} .budget-bad{color:#ef4444}
+  .budget-ok{color:#22c55e}
+  .budget-warn{color:#f59e0b}
+  .budget-bad{color:#ef4444}
 
-  /* 🔒 Global blocker to disable background when any overlay is open */
-  #globalBlocker{position:fixed; inset:0; background:transparent; display:none; z-index:19; pointer-events:auto;}
+  /* Global blocker */
+  #globalBlocker{
+    position:fixed; inset:0; background:transparent;
+    display:none; z-index:19; pointer-events:auto;
+  }
+
+  /* Light theme tweaks */
+  body.light{background:#f5f7fb;color:#0f172a}
+  body.light .stat-card,
+  body.light #statsModal,
+  body.light .goal-card,
+  body.light .modal,
+  body.light #historyPanel,
+  body.light .menu-item,
+  body.light .xp-form,
+  body.light .xp-card,
+  body.light .xp-list{
+    background:#ffffff;border-color:#e5e7eb;
+  }
+  body.light #historyList li{
+    background:#ffffff;border-color:#e5e7eb;
+  }
+  body.light .field{background:#ffffff;border-color:#e5e7eb}
+  body.light .goal-bar{background:#eef2ff;border-color:#c7d2fe}
+
+  /* Simple switch for settings (sound / haptics) */
+  .switch{position:relative;display:inline-block;width:40px;height:22px}
+  .switch input{display:none}
+  .slider{
+    position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+    background:#4b5563;border-radius:999px;
+    transition:.2s;
+  }
+  .slider:before{
+    position:absolute;content:"";
+    height:16px;width:16px;left:3px;top:3px;
+    background:white;border-radius:999px;
+    transition:.2s;
+  }
+  input:checked + .slider{background:#22c55e}
+  input:checked + .slider:before{transform:translateX(18px)}
+
+  /* Job Reminder + Predictions panels share base modal style */
+  #jobReminderBackdrop .modal,
+  #predictionBackdrop .modal{
+    max-width:380px;
+  }
+  #predictionBody p{margin:4px 0;font-size:14px}
+  #predictionValues{
+    display:grid;grid-template-columns:1fr 1fr;gap:6px;
+    margin-top:8px;
+  }
+  #predictionValues div{
+    background:#0b1224;border:1px solid #2b3f6f;
+    border-radius:10px;padding:8px 10px;font-size:13px;
+  }
+  #predictionValues span{display:block;font-weight:700;margin-top:3px}
 </style>
 </head>
+
 <body>
+  <!-- 🔒 Invisible glass pane that intercepts clicks when overlays are open -->
+  <div id="globalBlocker" aria-hidden="true"></div>
 
-<!-- 🔒 Invisible glass pane that intercepts clicks when overlays are open -->
-<div id="globalBlocker" aria-hidden="true"></div>
-
-<div class="top">
-  <span>Amount ($/hr):</span>
-  <div class="rate-wrap"><input id="rate" type="number" value="25" step="0.01" min="0"></div>
-</div>
-
-<div class="timer" id="timeDisplay">00:00:00.00</div>
-<div class="amount" id="moneyDisplay">$0.00</div>
-<div class="break-timer" id="breakDisplay">Break: 00:00:00</div>
-<div class="break-summary" id="breakSummary"></div>
-
-<div class="buttons">
-  <button id="start">Start</button>
-  <button id="stop">Stop</button>
-  <button id="clear">Clear</button>
-</div>
-
-<div class="buttons2">
-  <button id="startAtBtn">Start At</button>
-  <button id="stopAtBtn">Stop At</button>
-  <button id="takeBreakBtn">Take Break</button>
-  <button id="endBreakBtn">End Break</button>
-</div>
-
-<button id="menuBtn" aria-controls="menuPanel" aria-expanded="false">
-  <span class="hamburger" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
-      <path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>
-    </svg>
-  </span>
-  Menu
-</button>
-
-<button id="historyBtn" aria-live="polite">
-  <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
-  </svg>
-  History
-</button>
-
-<button id="statsBtn" title="View Stats">
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M4 21h16M6 17V9m4 8V5m4 12v-7m4 7V3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  Stats
-</button>
-
-<button id="inboxBtn" aria-controls="inboxPanel" aria-expanded="false" title="Inbox">
-  <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
-    <path d="M4 5h16v14H4z"></path><path d="M22 6l-10 7L2 6"></path>
-  </svg>
-  Inbox
-</button>
-
-<div id="menuPanel" aria-hidden="true" role="dialog" aria-labelledby="menuTitle">
-  <div id="menuHeader">
-    <div class="title">
-      <span class="hamburger" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
-          <path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>
-        </svg>
-      </span>
-      <h3 id="menuTitle">Menu</h3>
-    </div>
-    <button id="closeMenu">Close</button>
+  <div class="top">
+    <span>Amount ($/hr):</span>
+    <div class="rate-wrap"><input id="rate" type="number" value="25" step="0.01" min="0"></div>
   </div>
-  <div id="menuContent">
-    <div class="menu-item" id="menuGoals"><span>Goals</span><span class="r">›</span></div>
-    <div class="menu-item" id="menuSummary"><span>Summary</span><span class="r">›</span></div>
-    <div class="menu-item" id="menuCalc"><span>Calculator</span><span class="r">›</span></div>
-    <div class="menu-item" id="menuExpenses"><span>Expenses</span><span class="r">›</span></div>
-  </div>
-  <button id="settingsBtnFloat" aria-controls="settingsBackdrop">Settings</button>
-</div>
 
-<div id="goalsPanel" aria-hidden="true" role="dialog" aria-labelledby="goalsTitle">
-  <div id="goalsHeader">
-    <h3 id="goalsTitle">Goals</h3>
-    <button id="goalsClose">Back</button>
-  </div>
-  <div id="goalsBody">
-    <div class="goal-card">
-      <div class="goal-top"><div class="goal-title">Yearly Target</div><div class="goal-values" id="yearlyValues">$0 / $0 (0%)</div></div>
-      <div class="goal-bar"><div id="yearlyBar" class="goal-fill"></div></div>
-      <div class="goal-edit"><label for="yearlyInput">Set target</label><input id="yearlyInput" type="number" min="0" step="0.01" placeholder="e.g. 50000"><button id="yearlySave">Save</button></div>
-    </div>
-    <div class="goal-card">
-      <div class="goal-top"><div class="goal-title">Monthly Target</div><div class="goal-values" id="monthlyValues">$0 / $0 (0%)</div></div>
-      <div class="goal-bar"><div id="monthlyBar" class="goal-fill"></div></div>
-      <div class="goal-edit"><label for="monthlyInput">Set target</label><input id="monthlyInput" type="number" min="0" step="0.01" placeholder="e.g. 4000"><button id="monthlySave">Save</button></div>
-    </div>
-    <div class="goal-card">
-      <div class="goal-top"><div class="goal-title">Weekly Target</div><div class="goal-values" id="weeklyValues">$0 / $0 (0%)</div></div>
-      <div class="goal-bar"><div id="weeklyBar" class="goal-fill"></div></div>
-      <div class="goal-edit"><label for="weeklyInput">Set target</label><input id="weeklyInput" type="number" min="0" step="0.01" placeholder="e.g. 1000"><button id="weeklySave">Save</button></div>
-    </div>
-    <div class="goal-card">
-      <div class="goal-top"><div class="goal-title">Daily Target</div><div class="goal-values" id="dailyValues">$0 / $0 (0%)</div></div>
-      <div class="goal-bar"><div id="dailyBar" class="goal-fill"></div></div>
-      <div class="goal-edit"><label for="dailyInput">Set target</label><input id="dailyInput" type="number" min="0" step="0.01" placeholder="e.g. 200"><button id="dailySave">Save</button></div>
-    </div>
-  </div>
-</div>
+  <div class="timer" id="timeDisplay">00:00:00.00</div>
+  <div class="amount" id="moneyDisplay">$0.00</div>
+  <div class="break-timer" id="breakDisplay">Break: 00:00:00</div>
+  <div class="break-summary" id="breakSummary"></div>
 
-<div id="historyPanel" aria-hidden="true">
-  <div id="historyHeader">
-    <div class="title">
-      <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
+  <div class="buttons">
+    <button id="start">Start</button>
+    <button id="stop">Stop</button>
+    <button id="clear">Clear</button>
+  </div>
+  <div class="buttons2">
+    <button id="startAtBtn">Start At</button>
+    <button id="stopAtBtn">Stop At</button>
+    <button id="takeBreakBtn">Take Break</button>
+    <button id="endBreakBtn">End Break</button>
+  </div>
+
+  <button id="menuBtn" aria-controls="menuPanel" aria-expanded="false">
+    <span class="hamburger" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
+        <path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>
       </svg>
-      <h3>History</h3>
+    </span>
+    Menu
+  </button>
+
+  <button id="historyBtn" aria-live="polite">
+    <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
+    </svg>
+    History
+  </button>
+
+  <button id="statsBtn" title="View Stats">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 21h16M6 17V9m4 8V5m4 12v-7m4 7V3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Stats
+  </button>
+
+  <button id="inboxBtn" aria-controls="inboxPanel" aria-expanded="false" title="Inbox">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
+      <path d="M4 5h16v14H4z"></path><path d="M22 6l-10 7L2 6"></path>
+    </svg>
+    Inbox
+  </button>
+
+  <!-- Menu -->
+  <div id="menuPanel" aria-hidden="true" role="dialog" aria-labelledby="menuTitle">
+    <div id="menuHeader">
+      <div class="title">
+        <span class="hamburger" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">
+            <path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>
+          </svg>
+        </span>
+        <h3 id="menuTitle">Menu</h3>
+      </div>
+      <button id="closeMenu">Close</button>
     </div>
-    <button id="closeHistory">Close</button>
+    <div id="menuContent">
+      <div class="menu-item" id="menuGoals"><span>Goals</span><span class="r">›</span></div>
+      <div class="menu-item" id="menuSummary"><span>Summary</span><span class="r">›</span></div>
+      <div class="menu-item" id="menuCalc"><span>Calculator</span><span class="r">›</span></div>
+      <div class="menu-item" id="menuExpenses"><span>Expenses</span><span class="r">›</span></div>
+      <div class="menu-item" id="menuJobReminder"><span>Job Reminder</span><span class="r">›</span></div>
+      <div class="menu-item" id="menuPredictions"><span>Predictions</span><span class="r">›</span></div>
+    </div>
+    <button id="settingsBtnFloat" aria-controls="settingsBackdrop">Settings</button>
   </div>
-  <div id="totals">
-    <div class="card"><div class="k">This week</div><div class="v" id="weekTotal">$0.00</div></div>
-    <div class="card"><div class="k">This month</div><div class="v" id="monthTotal">$0.00</div></div>
+
+  <!-- Goals -->
+  <div id="goalsPanel" aria-hidden="true" role="dialog" aria-labelledby="goalsTitle">
+    <div id="goalsHeader">
+      <h3 id="goalsTitle">Goals</h3>
+      <button id="goalsClose">Back</button>
+    </div>
+    <div id="goalsBody">
+      <div class="goal-card">
+        <div class="goal-top">
+          <div class="goal-title">Yearly Target</div>
+          <div class="goal-values" id="yearlyValues">$0 / $0 (0%)</div>
+        </div>
+        <div class="goal-bar"><div id="yearlyBar" class="goal-fill"></div></div>
+        <div class="goal-edit">
+          <label for="yearlyInput">Set target</label>
+          <input id="yearlyInput" type="number" min="0" step="0.01" placeholder="e.g. 50000">
+          <button id="yearlySave">Save</button>
+        </div>
+      </div>
+
+      <div class="goal-card">
+        <div class="goal-top">
+          <div class="goal-title">Monthly Target</div>
+          <div class="goal-values" id="monthlyValues">$0 / $0 (0%)</div>
+        </div>
+        <div class="goal-bar"><div id="monthlyBar" class="goal-fill"></div></div>
+        <div class="goal-edit">
+          <label for="monthlyInput">Set target</label>
+          <input id="monthlyInput" type="number" min="0" step="0.01" placeholder="e.g. 4000">
+          <button id="monthlySave">Save</button>
+        </div>
+      </div>
+
+      <div class="goal-card">
+        <div class="goal-top">
+          <div class="goal-title">Weekly Target</div>
+          <div class="goal-values" id="weeklyValues">$0 / $0 (0%)</div>
+        </div>
+        <div class="goal-bar"><div id="weeklyBar" class="goal-fill"></div></div>
+        <div class="goal-edit">
+          <label for="weeklyInput">Set target</label>
+          <input id="weeklyInput" type="number" min="0" step="0.01" placeholder="e.g. 1000">
+          <button id="weeklySave">Save</button>
+        </div>
+      </div>
+
+      <div class="goal-card">
+        <div class="goal-top">
+          <div class="goal-title">Daily Target</div>
+          <div class="goal-values" id="dailyValues">$0 / $0 (0%)</div>
+        </div>
+        <div class="goal-bar"><div id="dailyBar" class="goal-fill"></div></div>
+        <div class="goal-edit">
+          <label for="dailyInput">Set target</label>
+          <input id="dailyInput" type="number" min="0" step="0.01" placeholder="e.g. 200">
+          <button id="dailySave">Save</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <ul id="historyList"></ul>
-</div>
 
-<div id="inboxPanel" aria-hidden="true" role="dialog" aria-labelledby="inboxTitle">
-  <div id="inboxHeader"><h3 id="inboxTitle">Inbox</h3><button id="closeInbox">Close</button></div>
-  <div id="inboxBody"><div class="inbox-empty">no messages</div></div>
-</div>
+  <!-- History -->
+  <div id="historyPanel" aria-hidden="true">
+    <div id="historyHeader">
+      <div class="title">
+        <svg class="book" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22V4.5zM6.5 4A.5.5 0 0 0 6 4.5v15a.5.5 0 0 0 .5.5H18V4H6.5z"/>
+        </svg>
+        <h3>History</h3>
+      </div>
+      <button id="closeHistory">Close</button>
+    </div>
+    <div id="totals">
+      <div class="card"><div class="k">This week</div><div class="v" id="weekTotal">$0.00</div></div>
+      <div class="card"><div class="k">This month</div><div class="v" id="monthTotal">$0.00</div></div>
+    </div>
+    <ul id="historyList"></ul>
+  </div>
 
-<div id="expensesPanel" aria-hidden="true" role="dialog" aria-labelledby="expensesTitle">
-  <div id="expensesHeader"><h3 id="expensesTitle">Expenses</h3><button id="closeExpenses">Close</button></div>
-  <div id="expensesBody">
-    <div class="xp-form">
-      <div><label for="xpAmount">Amount</label><input id="xpAmount" type="number" step="0.01" min="0" placeholder="e.g. 14.99"></div>
-      <div><label for="xpDate">Date</label><input id="xpDate" type="date"></div>
-      <div><label for="xpMerchant">Merchant</label><input id="xpMerchant" type="text" placeholder="e.g. McDonald's"></div>
-      <div><label for="xpCategory">Category</label>
-        <select id="xpCategory">
-          <option>Auto & Gas</option><option>Groceries</option><option>Restaurants</option><option>Bars & Nightlife</option>
-          <option>Subscriptions</option><option>Shopping</option><option>Bills & Utilities</option><option>Healthcare</option>
-          <option>Entertainment</option><option>Travel</option><option>Other</option>
+  <!-- Inbox -->
+  <div id="inboxPanel" aria-hidden="true" role="dialog" aria-labelledby="inboxTitle">
+    <div id="inboxHeader"><h3 id="inboxTitle">Inbox</h3><button id="closeInbox">Close</button></div>
+    <div id="inboxBody"><div class="inbox-empty">no messages</div></div>
+  </div>
+
+  <!-- Expenses -->
+  <div id="expensesPanel" aria-hidden="true" role="dialog" aria-labelledby="expensesTitle">
+    <div id="expensesHeader"><h3 id="expensesTitle">Expenses</h3><button id="closeExpenses">Close</button></div>
+    <div id="expensesBody">
+      <div class="xp-form">
+        <div>
+          <label for="xpAmount">Amount</label>
+          <input id="xpAmount" type="number" step="0.01" min="0" placeholder="e.g. 14.99">
+        </div>
+        <div>
+          <label for="xpDate">Date</label>
+          <input id="xpDate" type="date">
+        </div>
+        <div>
+          <label for="xpMerchant">Merchant</label>
+          <input id="xpMerchant" type="text" placeholder="e.g. McDonald's">
+        </div>
+        <div>
+          <label for="xpCategory">Category</label>
+          <select id="xpCategory">
+            <option>Auto & Gas</option><option>Groceries</option><option>Restaurants</option>
+            <option>Bars & Nightlife</option><option>Subscriptions</option><option>Shopping</option>
+            <option>Bills & Utilities</option><option>Healthcare</option><option>Entertainment</option>
+            <option>Travel</option><option>Other</option>
+          </select>
+        </div>
+        <div class="full">
+          <label for="xpNote">Note</label>
+          <textarea id="xpNote" placeholder="Optional note"></textarea>
+        </div>
+        <div class="full xp-actions">
+          <button id="xpAddBtn" class="xp-primary">Add Expense</button>
+          <button id="xpImportBtn" class="xp-secondary" title="Paste: 2025-10-08, Walmart, 42.11, Groceries">Quick Import</button>
+          <button id="xpClearMonthBtn" class="btn-mini danger" style="margin-left:auto">Clear Current Month</button>
+        </div>
+      </div>
+
+      <div class="xp-cards">
+        <div class="xp-card">
+          <div class="k">This Month</div>
+          <div class="v" id="xpMonthSpend">$0.00</div>
+          <div class="xp-note" id="xpBudgetHint">No budget set</div>
+        </div>
+        <div class="xp-card">
+          <div class="k">Top Category</div>
+          <div class="v" id="xpTopCat">—</div>
+          <div class="xp-note" id="xpTopCatShare">—</div>
+        </div>
+      </div>
+
+      <div class="xp-chart">
+        <h4 style="margin:0 0 8px">Category Breakdown</h4>
+        <canvas id="xpPie" height="180"></canvas>
+        <div class="xp-note">Shows where the month’s money actually went.</div>
+      </div>
+      <div class="xp-chart">
+        <h4 style="margin:0 0 8px">Monthly Trend</h4>
+        <canvas id="xpTrend" height="180"></canvas>
+        <div class="xp-note">Last 6 months.</div>
+      </div>
+      <div class="xp-list">
+        <h4 style="margin:0 0 8px">Entries</h4>
+        <div id="xpList"></div>
+      </div>
+      <div class="xp-list">
+        <h4 style="margin:0 0 8px">Suggestions</h4>
+        <ul id="xpSuggestions" style="margin:0;padding-left:18px"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save / Edit / Confirm -->
+  <div id="saveBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+    <div class="modal">
+      <h3 id="saveTitle">Save this session?</h3>
+      <div class="field">
+        <span style="font-size:14px;color:#94a3b8;">Tag</span>
+        <input id="tagInput" type="text" placeholder="Optional tag">
+      </div>
+      <div class="actions">
+        <button id="discardBtn">No</button>
+        <button id="saveBtn">Yes, Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="modal">
+      <h3 id="editTitle">Edit entry</h3>
+      <div class="field">
+        <label style="width:80px;color:#94a3b8">Start</label>
+        <input id="editStart" type="datetime-local">
+      </div>
+      <div class="field">
+        <label style="width:80px;color:#94a3b8">End</label>
+        <input id="editEnd" type="datetime-local">
+      </div>
+      <div class="field">
+        <span style="font-size:14px;color:#94a3b8;">Tag</span>
+        <input id="editTag" type="text" placeholder="Edit tag">
+      </div>
+      <div class="actions">
+        <button id="editCancel">Cancel</button>
+        <button id="editSave">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal">
+      <h3 id="confirmTitle">Delete this entry?</h3>
+      <div class="actions">
+        <button id="confirmNo">No</button>
+        <button id="confirmYes">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div id="settingsBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal">
+      <h3 id="settingsTitle">Settings</h3>
+      <div class="field" style="justify-content:space-between;margin-top:0;">
+        <span>Theme</span>
+        <select id="themeSelect" aria-label="Theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
         </select>
       </div>
-      <div class="full"><label for="xpNote">Note</label><textarea id="xpNote" placeholder="Optional note"></textarea></div>
-      <div class="full xp-actions">
-        <button id="xpAddBtn" class="xp-primary">Add Expense</button>
-        <button id="xpImportBtn" class="xp-secondary" title="Paste: 2025-10-08, Walmart, 42.11, Groceries">Quick Import</button>
-        <button id="xpClearMonthBtn" class="btn-mini danger" style="margin-left:auto">Clear Current Month</button>
+      <div class="field" style="justify-content:space-between;">
+        <span>Sound</span>
+        <label class="switch"><input type="checkbox" id="soundToggle"><span class="slider"></span></label>
+      </div>
+      <div class="field" style="justify-content:space-between;">
+        <span>Haptic feedback</span>
+        <label class="switch"><input type="checkbox" id="hapticsToggle"><span class="slider"></span></label>
+      </div>
+      <div class="actions" style="margin-top:16px;">
+        <button id="settingsClose" style="background:#6b7280;">Close</button>
+        <button id="settingsSave" style="background:#22c55e;">Save</button>
       </div>
     </div>
-
-    <div class="xp-cards">
-      <div class="xp-card"><div class="k">This Month</div><div class="v" id="xpMonthSpend">$0.00</div><div class="xp-note" id="xpBudgetHint">No budget set</div></div>
-      <div class="xp-card"><div class="k">Top Category</div><div class="v" id="xpTopCat">—</div><div class="xp-note" id="xpTopCatShare">—</div></div>
-    </div>
-
-    <div class="xp-chart"><h4 style="margin:0 0 8px">Category Breakdown</h4><canvas id="xpPie" height="180"></canvas><div class="xp-note">Shows where the month’s money actually went.</div></div>
-    <div class="xp-chart"><h4 style="margin:0 0 8px">Monthly Trend</h4><canvas id="xpTrend" height="180"></canvas><div class="xp-note">Last 6 months.</div></div>
-    <div class="xp-list"><h4 style="margin:0 0 8px">Entries</h4><div id="xpList"></div></div>
-    <div class="xp-list"><h4 style="margin:0 0 8px">Suggestions</h4><ul id="xpSuggestions" style="margin:0;padding-left:18px"></ul></div>
   </div>
-</div>
 
-<div id="saveBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
-  <div class="modal">
-    <h3 id="saveTitle">Save this session?</h3>
-    <div class="field"><span style="font-size:14px;color:#94a3b8;">Tag</span><input id="tagInput" type="text" placeholder="Optional tag"></div>
-    <div class="actions"><button id="discardBtn">No</button><button id="saveBtn">Yes, Save</button></div>
-  </div>
-</div>
-
-<div id="editBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="editTitle">
-  <div class="modal">
-    <h3 id="editTitle">Edit entry</h3>
-    <div class="field"><label style="width:80px;color:#94a3b8">Start</label><input id="editStart" type="datetime-local"></div>
-    <div class="field"><label style="width:80px;color:#94a3b8">End</label><input id="editEnd" type="datetime-local"></div>
-    <div class="field"><span style="font-size:14px;color:#94a3b8;">Tag</span><input id="editTag" type="text" placeholder="Edit tag"></div>
-    <div class="actions"><button id="editCancel">Cancel</button><button id="editSave">Save changes</button></div>
-  </div>
-</div>
-
-<div id="confirmBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-  <div class="modal"><h3 id="confirmTitle">Delete this entry?</h3><div class="actions"><button id="confirmNo">No</button><button id="confirmYes">Yes</button></div></div>
-</div>
-
-<div id="settingsBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-  <div class="modal">
-    <h3 id="settingsTitle">Settings</h3>
-    <div class="setting-row"><div>Theme</div><div class="field" style="margin:0;"><select id="themeSelect" aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select></div></div>
-    <div class="setting-row"><div>Sound</div><label class="switch"><input type="checkbox" id="soundToggle"><span class="slider"></span></label></div>
-    <div class="setting-row"><div>Haptic feedback</div><label class="switch"><input type="checkbox" id="hapticsToggle"><span class="slider"></span></label></div>
-    <div class="actions" style="margin-top:16px;"><button id="settingsClose" style="background:#6b7280;">Close</button><button id="settingsSave" style="background:#22c55e;">Save</button></div>
-  </div>
-</div>
-
-<div id="startAtBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="startAtTitle">
-  <div class="modal">
-    <h3 id="startAtTitle">Start At</h3>
-    <div class="field"><label style="width:90px;color:#94a3b8">Date/Time</label><input id="startAtInput" type="datetime-local"></div>
-    <div class="actions"><button id="startAtCancel" style="background:#6b7280;">Cancel</button><button id="startAtSave" style="background:#22c55e;">Set</button></div>
-  </div>
-</div>
-
-<div id="stopAtBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="stopAtTitle">
-  <div class="modal">
-    <h3 id="stopAtTitle">Stop At</h3>
-    <div class="field"><label style="width:90px;color:#94a3b8">Date/Time</label><input id="stopAtInput" type="datetime-local"></div>
-    <div class="actions"><button id="stopAtCancel" style="background:#6b7280;">Cancel</button><button id="stopAtSave" style="background:#22c55e;">Set</button></div>
-  </div>
-</div>
-
-<div id="exportBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
-  <div class="modal"><h3 id="exportTitle">Export</h3><p style="text-align:center;margin:8px 0 0;">Coming soon.</p><div class="actions" style="margin-top:12px;"><button id="exportClose" style="background:#22c55e;">OK</button></div></div>
-</div>
-
-<div id="statsBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
-  <div id="statsModal">
-    <div class="stats-header"><h3 id="statsTitle">Performance Dashboard</h3><button class="stats-close" id="statsClose">Close</button></div>
-    <div class="stat-summary">
-      <div class="stat-card"><div class="stat-title">Today</div><div class="stat-value" id="todayEarned">$0.00</div></div>
-      <div class="stat-card"><div class="stat-title">This Week</div><div class="stat-value" id="weekEarned">$0.00</div></div>
-      <div class="stat-card"><div class="stat-title">This Month</div><div class="stat-value" id="monthEarned">$0.00</div></div>
-    </div>
-    <canvas id="earningsChart" height="170"></canvas>
-    <canvas id="hoursChart" height="170"></canvas>
-
-    <!-- 🔁 Tag Effectiveness donut (7d) -->
-    <div class="break-section">
-      <p class="break-title">Tag Effectiveness (7d)</p>
-      <canvas id="breakChart" height="200"></canvas>
-      <div class="break-summary" style="margin-top:12px">
-        <div>Top Tag<span id="topTag">—</span></div>
-        <div>Unique Tags<span id="tagCount">0</span></div>
-        <div>Top Share<span id="topShare">0%</span></div>
+  <!-- Start / Stop at -->
+  <div id="startAtBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="startAtTitle">
+    <div class="modal">
+      <h3 id="startAtTitle">Start At</h3>
+      <div class="field">
+        <label style="width:90px;color:#94a3b8">Date/Time</label>
+        <input id="startAtInput" type="datetime-local">
+      </div>
+      <div class="actions">
+        <button id="startAtCancel" style="background:#6b7280;">Cancel</button>
+        <button id="startAtSave" style="background:#22c55e;">Set</button>
       </div>
     </div>
+  </div>
 
-    <div class="analytics-info">
-      <p>Average hourly rate: <span id="avgRate">$0/hr</span></p>
-      <p>Average daily earnings (7d): <span id="avgDay">$0</span></p>
-      <p>Trend insight: <span id="trend">Stable</span></p>
+  <div id="stopAtBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="stopAtTitle">
+    <div class="modal">
+      <h3 id="stopAtTitle">Stop At</h3>
+      <div class="field">
+        <label style="width:90px;color:#94a3b8">Date/Time</label>
+        <input id="stopAtInput" type="datetime-local">
+      </div>
+      <div class="actions">
+        <button id="stopAtCancel" style="background:#6b7280;">Cancel</button>
+        <button id="stopAtSave" style="background:#22c55e;">Set</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script>
-  /* ========= State ========= */
+  <!-- Export placeholder -->
+  <div id="exportBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="modal">
+      <h3 id="exportTitle">Export</h3>
+      <p style="text-align:center;margin:8px 0 0;">Coming soon.</p>
+      <div class="actions" style="margin-top:12px;">
+        <button id="exportClose" style="background:#22c55e;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div id="statsBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+    <div id="statsModal">
+      <div class="stats-header">
+        <h3 id="statsTitle">Performance Dashboard</h3>
+        <button class="stats-close" id="statsClose">Close</button>
+      </div>
+      <div class="stat-summary">
+        <div class="stat-card">
+          <div class="stat-title">Today</div>
+          <div class="stat-value" id="todayEarned">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">This Week</div>
+          <div class="stat-value" id="weekEarned">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">This Month</div>
+          <div class="stat-value" id="monthEarned">$0.00</div>
+        </div>
+      </div>
+      <canvas id="earningsChart" height="170"></canvas>
+      <canvas id="hoursChart" height="170"></canvas>
+
+      <div class="break-section">
+        <p class="break-title">Tag Effectiveness (7d)</p>
+        <canvas id="breakChart" height="200"></canvas>
+        <div class="break-summary-grid" style="margin-top:12px">
+          <div>Top Tag<span id="topTag">—</span></div>
+          <div>Unique Tags<span id="tagCount">0</span></div>
+          <div>Top Share<span id="topShare">0%</span></div>
+        </div>
+      </div>
+
+      <div class="analytics-info">
+        <p>Average hourly rate: <span id="avgRate">$0/hr</span></p>
+        <p>Average daily earnings (7d): <span id="avgDay">$0</span></p>
+        <p>Trend insight: <span id="trend">Stable</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Job Reminder (simple "coming soon") -->
+  <div id="jobReminderBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="jobReminderTitle">
+    <div class="modal">
+      <h3 id="jobReminderTitle">Job Reminder</h3>
+      <p style="font-size:14px;color:var(--muted);text-align:center;">
+        Job reminder with alarms and tags is coming soon.<br>
+        For now, you can use tags in History to mark different jobs.
+      </p>
+      <div class="actions" style="margin-top:12px;">
+        <button id="jobReminderClose" style="background:#22c55e;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Predictions panel -->
+  <div id="predictionBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="predictionTitle">
+    <div class="modal">
+      <h3 id="predictionTitle">Predictions</h3>
+      <div id="predictionBody">
+        <p style="font-size:13px;color:var(--muted);">
+          Based on your recent earnings, here’s what you’re on track to make
+          if you keep a similar pace:
+        </p>
+        <div id="predictionValues">
+          <div>Daily<span id="predDaily">$0.00</span></div>
+          <div>Weekly<span id="predWeekly">$0.00</span></div>
+          <div>Bi-weekly<span id="predBiWeekly">$0.00</span></div>
+          <div>Monthly<span id="predMonthly">$0.00</span></div>
+          <div style="grid-column:1/-1;">Yearly<span id="predYearly">$0.00</span></div>
+        </div>
+        <p id="predictionHint" style="margin-top:10px;font-size:13px;color:var(--muted);"></p>
+      </div>
+      <div class="actions" style="margin-top:12px;">
+        <button id="predictionClose" style="background:#22c55e;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js and main script (split into Part 2 + 3) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    /* ========= State ========= */
   let startTime = 0, elapsed = 0, running = false, interval = null;
   let startWallTs = null, endWallTs = null;
 
@@ -552,10 +1133,12 @@
   const closeMenu = document.getElementById('closeMenu');
   const settingsBtnFloat = document.getElementById('settingsBtnFloat');
 
-  const menuGoals   = document.getElementById('menuGoals');
-  const menuSummary = document.getElementById('menuSummary');
-  const menuCalc    = document.getElementById('menuCalc');
-  const menuExpenses= document.getElementById('menuExpenses');
+  const menuGoals      = document.getElementById('menuGoals');
+  const menuSummary    = document.getElementById('menuSummary');
+  const menuCalc       = document.getElementById('menuCalc');
+  const menuExpenses   = document.getElementById('menuExpenses');
+  const menuJobReminder= document.getElementById('menuJobReminder');
+  const menuPredictions= document.getElementById('menuPredictions');
 
   const settingsBackdrop = document.getElementById('settingsBackdrop');
   const settingsClose = document.getElementById('settingsClose');
@@ -629,6 +1212,18 @@
   const xpSuggestions = document.getElementById('xpSuggestions');
   const xpClearMonthBtn = document.getElementById('xpClearMonthBtn');
 
+  const jobReminderBackdrop = document.getElementById('jobReminderBackdrop');
+  const jobReminderClose = document.getElementById('jobReminderClose');
+
+  const predictionBackdrop = document.getElementById('predictionBackdrop');
+  const predictionClose    = document.getElementById('predictionClose');
+  const predDaily   = document.getElementById('predDaily');
+  const predWeekly  = document.getElementById('predWeekly');
+  const predBiWeekly= document.getElementById('predBiWeekly');
+  const predMonthly = document.getElementById('predMonthly');
+  const predYearly  = document.getElementById('predYearly');
+  const predictionHint = document.getElementById('predictionHint');
+
   const blocker = document.getElementById('globalBlocker');
 
   let earningsChart = null;
@@ -653,14 +1248,35 @@
     const pad=n=>String(n).padStart(2,'0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
-  function fromLocalInput(val){ return new Date(val.replace(' ', 'T')).getTime(); }
+  function fromLocalInput(val){
+    return new Date(val.replace(' ', 'T')).getTime();
+  }
 
   const startOfDay   = ts => { const d = new Date(ts); d.setHours(0,0,0,0); return d.getTime(); };
   const startOfWeek  = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x.getTime(); };
   const startOfMonth = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), 1); x.setHours(0,0,0,0); return x.getTime(); };
   function humanDate(ts){ const d=new Date(ts); return d.toLocaleDateString(); }
-  function rangeDays(n){ const arr=[]; const now=new Date(); now.setHours(0,0,0,0); for(let i=n-1;i>=0;i--){ arr.push(+now - i*86400000); } return arr; }
-  function vibrate(ms=20){ if (!prefs.haptics) return; if (navigator.vibrate){ try{ navigator.vibrate(ms); }catch{} } }
+  function rangeDays(n){
+    const arr=[]; const now=new Date(); now.setHours(0,0,0,0);
+    for(let i=n-1;i>=0;i--){ arr.push(+now - i*86400000); }
+    return arr;
+  }
+  function humanShort(ms){
+    const t = Math.max(0, ms|0);
+    const h = Math.floor(t/3600000);
+    const m = Math.floor((t%3600000)/60000);
+    const s = Math.floor((t%60000)/1000);
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  function vibrate(ms=20){
+    if (!prefs.haptics) return;
+    if (navigator.vibrate){
+      try{ navigator.vibrate(ms); }catch{}
+    }
+  }
   let audioCtx = null;
   function playSound(freq=880, durMs=70){
     if (!prefs.sound) return;
@@ -677,8 +1293,10 @@
     }catch{}
   }
 
-/* ========= Persistence ========= */
-  function savePrefs(){ try{ localStorage.setItem(STORE_KEY_PREFS, JSON.stringify(prefs)); }catch{} }
+  /* ========= Persistence ========= */
+  function savePrefs(){
+    try{ localStorage.setItem(STORE_KEY_PREFS, JSON.stringify(prefs)); }catch{}
+  }
   function loadPrefs(){
     try{
       const raw = localStorage.getItem(STORE_KEY_PREFS);
@@ -689,7 +1307,9 @@
       prefs.haptics = obj.haptics !== false;
     }catch{}
   }
-  function saveGoals(){ try{ localStorage.setItem(STORE_KEY_GOALS, JSON.stringify(goals)); }catch{} }
+  function saveGoals(){
+    try{ localStorage.setItem(STORE_KEY_GOALS, JSON.stringify(goals)); }catch{}
+  }
   function loadGoals(){
     try{
       const raw = localStorage.getItem(STORE_KEY_GOALS);
@@ -701,9 +1321,13 @@
       goals.daily   = +g.daily   || 0;
     }catch{}
   }
-  function applyTheme(){ document.body.classList.toggle('light', prefs.theme === 'light'); }
+  function applyTheme(){
+    document.body.classList.toggle('light', prefs.theme === 'light');
+  }
 
-  function saveHistoryStore(){ try{ localStorage.setItem(STORE_KEY_HISTORY, JSON.stringify(history)); }catch(e){} }
+  function saveHistoryStore(){
+    try{ localStorage.setItem(STORE_KEY_HISTORY, JSON.stringify(history)); }catch(e){}
+  }
   function loadHistoryStore(){
     try{
       const raw = localStorage.getItem(STORE_KEY_HISTORY);
@@ -713,7 +1337,9 @@
     }catch(e){}
   }
 
-  function saveExpenses(){ try{ localStorage.setItem(STORE_KEY_EXPENSES, JSON.stringify(expenses)); }catch(e){} }
+  function saveExpenses(){
+    try{ localStorage.setItem(STORE_KEY_EXPENSES, JSON.stringify(expenses)); }catch(e){}
+  }
   function loadExpenses(){
     try{
       const raw = localStorage.getItem(STORE_KEY_EXPENSES);
@@ -722,7 +1348,9 @@
       if (Array.isArray(arr)) expenses = arr;
     }catch(e){}
   }
-  function saveBudgets(){ try{ localStorage.setItem(STORE_KEY_BUDGETS, JSON.stringify(budgets)); }catch(e){} }
+  function saveBudgets(){
+    try{ localStorage.setItem(STORE_KEY_BUDGETS, JSON.stringify(budgets)); }catch(e){}
+  }
   function loadBudgets(){
     try{
       const raw = localStorage.getItem(STORE_KEY_BUDGETS);
@@ -767,7 +1395,8 @@
 
   function update(){
     const now = Date.now();
-    const w1 = (now/22)%60; const w2 = (now/37)%90;
+    const w1 = (now/22)%60;
+    const w2 = (now/37)%90;
     [yearlyBar, monthlyBar, weeklyBar, dailyBar].forEach(el=>{
       if (!el) return;
       el.style.setProperty('--wave1', `${w1}px`);
@@ -775,13 +1404,14 @@
     });
 
     if (scheduledStartTs && now >= scheduledStartTs && !running && !onBreak){
-      scheduledStartTs = null; startTimer();
+      scheduledStartTs = null;
+      startTimer();
     }
     if (scheduledStopTs && now >= scheduledStopTs && running){
       finalizeActiveBreak();
       scheduledStopTs = null;
       running = false;
-      clearInterval(interval); interval = null;
+      if (interval){ clearInterval(interval); interval=null; }
       endWallTs = now;
       saveState();
       saveBackdrop.classList.add('show');
@@ -802,7 +1432,10 @@
     timeDisplay.textContent = formatMain(elapsedMs);
     moneyDisplay.textContent = fmtMoney(earned);
   }
-  function startInterval(){ if (interval) clearInterval(interval); interval = setInterval(update, 16); }
+  function startInterval(){
+    if (interval) clearInterval(interval);
+    interval = setInterval(update, 16);
+  }
 
   function startTimer(){
     if (running) return;
@@ -832,7 +1465,7 @@
     if (!running) return;
     finalizeActiveBreak();
     running = false;
-    clearInterval(interval); interval = null;
+    if (interval){ clearInterval(interval); interval = null; }
     endWallTs = Date.now();
     saveState();
     saveBackdrop.classList.add('show');
@@ -858,7 +1491,10 @@
     vibrate(10); playSound(500, 60);
   }
 
-  function flashHistoryBtn(){ historyBtn.classList.add('flash'); setTimeout(()=>historyBtn.classList.remove('flash'), 1000); }
+  function flashHistoryBtn(){
+    historyBtn.classList.add('flash');
+    setTimeout(()=>historyBtn.classList.remove('flash'), 1000);
+  }
 
   function updateTotals(){
     const now = Date.now(), w0=startOfWeek(now), m0=startOfMonth(now);
@@ -866,16 +1502,6 @@
     const monthSum = history.filter(h=>h.endTs>=m0).reduce((a,b)=>a+(b.amount||0),0);
     weekTotalEl.textContent = fmtMoney(weekSum);
     monthTotalEl.textContent = fmtMoney(monthSum);
-  }
-
-  function humanShort(ms){
-    const t = Math.max(0, ms|0);
-    const h = Math.floor(t/3600000);
-    const m = Math.floor((t%3600000)/60000);
-    const s = Math.floor((t%60000)/1000);
-    if (h) return `${h}h ${m}m`;
-    if (m) return `${m}m ${s}s`;
-    return `${s}s`;
   }
 
   function renderHistory(){
@@ -902,7 +1528,10 @@
     });
 
     historyList.querySelectorAll('[data-del]').forEach(btn=>{
-      btn.onclick = ()=>{ pendingDeleteId = btn.getAttribute('data-del'); confirmBackdrop.classList.add('show'); };
+      btn.onclick = ()=>{
+        pendingDeleteId = btn.getAttribute('data-del');
+        confirmBackdrop.classList.add('show');
+      };
     });
 
     historyList.querySelectorAll('[data-edit]').forEach(btn=>{
@@ -943,7 +1572,10 @@
       history.unshift(entry);
       saveHistoryStore();
       tagInput.value = '';
-      renderHistory(); updateTotals(); flashHistoryBtn(); vibrate(20); playSound(900, 80);
+      renderHistory();
+      updateTotals();
+      flashHistoryBtn();
+      vibrate(20); playSound(900, 80);
     }
 
     saveBackdrop.classList.remove('show');
@@ -966,17 +1598,24 @@
     const s = editStart.value, e = editEnd.value;
     if (!s || !e) { alert('Provide both start and end.'); return; }
     const startTs = fromLocalInput(s), endTs = fromLocalInput(e);
-    if (!(isFinite(startTs)&&isFinite(endTs)) || endTs < startTs){ alert('End must be after Start.'); return; }
+    if (!(isFinite(startTs)&&isFinite(endTs)) || endTs < startTs){
+      alert('End must be after Start.');
+      return;
+    }
     const rate = parseFloat(rateInput.value)||0;
     const dur = endTs - startTs;
-    entry.startTs = startTs; entry.endTs = endTs; entry.elapsedMs = dur;
+    entry.startTs = startTs;
+    entry.endTs = endTs;
+    entry.elapsedMs = dur;
     entry.amount = +(rate * (dur/3600000)).toFixed(2);
     entry.tag = (editTag.value||'').trim();
 
     saveHistoryStore();
     editingId = null;
     editBackdrop.classList.remove('show');
-    renderHistory(); updateTotals(); vibrate(15); playSound(800, 70);
+    renderHistory();
+    updateTotals();
+    vibrate(15); playSound(800, 70);
   }
 
   function showBreak(){ breakDisplay.classList.add('show'); }
@@ -985,7 +1624,9 @@
     breakDisplay.textContent = `Break: 00:00:00`;
     breakTicker = setInterval(()=>{
       const ms = Date.now() - breakStartTs;
-      const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+      const h = Math.floor(ms/3600000),
+            m = Math.floor((ms%3600000)/60000),
+            s = Math.floor((ms%60000)/1000);
       breakDisplay.textContent = `Break: ${pad2(h)}:${pad2(m)}:${pad2(s)}`;
     }, 250);
   }
@@ -1001,7 +1642,10 @@
     goalsPanel.classList.add('show');
     goalsPanel.setAttribute('aria-hidden','false');
 
-    const tick = ()=>{ renderGoalBars(); goalsRAF = requestAnimationFrame(tick); };
+    const tick = ()=>{
+      renderGoalBars();
+      goalsRAF = requestAnimationFrame(tick);
+    };
     if (!goalsRAF) goalsRAF = requestAnimationFrame(tick);
   }
   function closeGoals(){
@@ -1014,7 +1658,10 @@
     const now = Date.now();
     const year0  = (new Date(new Date(now).getFullYear(),0,1)).getTime();
     const month0 = (new Date(new Date(now).getFullYear(),new Date(now).getMonth(),1)).getTime();
-    const week0  = (function(){ const d=new Date(now); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return +x; })();
+    const week0  = (function(){
+      const d=new Date(now); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return +x;
+    })();
     const day0   = (function(d){ d=new Date(now); d.setHours(0,0,0,0); return +d; })();
 
     const yVal = sumRangeSince(year0);
@@ -1042,26 +1689,53 @@
     weeklyValues.textContent  = `${fmtMoney(wVal)} / ${fmtMoney(wT)} (${Math.floor(wPct)}%)`;
     dailyValues.textContent   = `${fmtMoney(dVal)} / ${fmtMoney(dT)} (${Math.floor(dPct)}%)`;
   }
-  // ✅ Save handlers that persist goals
   yearlySave.onclick  = ()=>{ goals.yearly  = +yearlyInput.value  || 0; saveGoals(); renderGoalBars(); vibrate(8); playSound(900,70); };
   monthlySave.onclick = ()=>{ goals.monthly = +monthlyInput.value || 0; saveGoals(); renderGoalBars(); vibrate(8); playSound(900,70); };
   weeklySave.onclick  = ()=>{ goals.weekly  = +weeklyInput.value  || 0; saveGoals(); renderGoalBars(); vibrate(8); playSound(900,70); };
   dailySave.onclick   = ()=>{ goals.daily   = +dailyInput.value   || 0; saveGoals(); renderGoalBars(); vibrate(8); playSound(900,70); };
 
   /* ===== Charts plugin ===== */
-  const glowPlugin = { id:'glow', afterDatasetsDraw(chart){ const ctx = chart.ctx; ctx.save(); chart.data.datasets.forEach((ds, i)=>{ const meta = chart.getDatasetMeta(i); if (!meta.data) return; ctx.shadowColor = (ds.borderColor || 'rgba(255,255,255,.5)'); ctx.shadowBlur = 16; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0; meta.data.forEach(pt=>{ ctx.beginPath(); ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI*2); ctx.fillStyle = Array.isArray(ds.pointBackgroundColor) ? ds.pointBackgroundColor[0] : (ds.pointBackgroundColor || ds.backgroundColor || '#fff'); ctx.fill(); }); }); ctx.restore(); } };
+  const glowPlugin = {
+    id:'glow',
+    afterDatasetsDraw(chart){
+      const ctx = chart.ctx;
+      ctx.save();
+      chart.data.datasets.forEach((ds, i)=>{
+        const meta = chart.getDatasetMeta(i);
+        if (!meta.data) return;
+        ctx.shadowColor = (ds.borderColor || 'rgba(255,255,255,.5)');
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetX=0;
+        ctx.shadowOffsetY=0;
+        meta.data.forEach(pt=>{
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI*2);
+          ctx.fillStyle = Array.isArray(ds.pointBackgroundColor)
+            ? ds.pointBackgroundColor[0]
+            : (ds.pointBackgroundColor || ds.backgroundColor || '#fff');
+          ctx.fill();
+        });
+      });
+      ctx.restore();
+    }
+  };
   Chart.register(glowPlugin);
 
-  function gradient(ctx, area, from, to){ const g = ctx.createLinearGradient(0, area.bottom, 0, area.top); g.addColorStop(0, from); g.addColorStop(1, to); return g; }
+  function gradient(ctx, area, from, to){
+    const g = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+    g.addColorStop(0, from); g.addColorStop(1, to);
+    return g;
+  }
 
   function openStats(){ renderStats(); statsBackdrop.classList.add('show'); syncOverlays(); }
   function closeStats(){ statsBackdrop.classList.remove('show'); syncOverlays(); }
-  document.getElementById('statsBtn').onclick = openStats;
-  document.getElementById('statsClose').onclick = closeStats;
+  statsBtn.onclick = openStats;
+  statsClose.onclick = closeStats;
   statsBackdrop.addEventListener('click',(e)=>{ if (e.target===statsBackdrop) closeStats(); });
 
-  function labelsFromDates(days){ return days.map(ts=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(ts).getDay()]); }
-
+  function labelsFromDates(days){
+    return days.map(ts=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(ts).getDay()]);
+  }
 
   // 🎯 Tag color generator for legend squares
   function colorForTag(tag, idx){
@@ -1072,7 +1746,10 @@
   function renderStats(){
     const now = Date.now();
     const d0 = (d=>{d=new Date(now); d.setHours(0,0,0,0); return +d;})();
-    const w0 = (function(){ const d=new Date(now); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return +x; })();
+    const w0 = (function(){
+      const d=new Date(now); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return +x;
+    })();
     const m0 = (d=>{d=new Date(now); d.setDate(1); d.setHours(0,0,0,0); return +d;})();
 
     const todayFixed = sumEntriesBetween(d0, d0+86400000);
@@ -1117,7 +1794,10 @@
     /* 🥯 Tag donut: sum earnings by tag for current week */
     const tagMap = {};
     for (const h of history){
-      if (h.endTs >= w0){ const key = (h.tag && h.tag.trim()) ? h.tag.trim() : 'Untagged'; tagMap[key] = (tagMap[key]||0) + (h.amount||0); }
+      if (h.endTs >= w0){
+        const key = (h.tag && h.tag.trim()) ? h.tag.trim() : 'Untagged';
+        tagMap[key] = (tagMap[key]||0) + (h.amount||0);
+      }
     }
     const tagEntries = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);
     const labels = tagEntries.map(([k])=>k);
@@ -1134,7 +1814,13 @@
     const bctx = document.getElementById('breakChart').getContext('2d');
     breakChart = new Chart(bctx, {
       type:'doughnut',
-      data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:'#0b1224', borderWidth:2, hoverOffset:10 }]},
+      data:{ labels, datasets:[{
+        data,
+        backgroundColor:colors,
+        borderColor:'#0b1224',
+        borderWidth:2,
+        hoverOffset:10
+      }]},
       options:{
         cutout:'68%',
         plugins:{
@@ -1144,7 +1830,7 @@
             labels:{
               color:'#e2e8f0',
               usePointStyle:true,
-              pointStyle:'rect',   /* small square swatch */
+              pointStyle:'rect',
               boxWidth:12,
               boxHeight:12,
               padding:12
@@ -1166,32 +1852,125 @@
 
     const eArea = {top:0,bottom:170}, hArea = {top:0,bottom:170};
     const hoursFill = gradient(hctx, hArea, 'rgba(96,165,250,0.08)','rgba(96,165,250,0.35)');
-    const barColors = earnings.map((v,i)=> i===labels.length-1 ? 'rgba(34,197,94,1)' :
-      ['#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b','#ef4444','#22d3ee'][i%7]);
+    const barColors = earnings.map((v,i)=> i===labels.length-1
+      ? 'rgba(34,197,94,1)'
+      : ['#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b','#ef4444','#22d3ee'][i%7]);
 
     earningsChart = new Chart(ectx, {
       type:'bar',
-      data:{ labels, datasets:[{ label:'Earnings ($)', data:earnings, backgroundColor: barColors, borderColor:'#0ea5e9', borderWidth:1.2, hoverBackgroundColor: barColors }]},
-      options:{ responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>'$'+ctx.raw.toFixed(2)}}}, scales:{ x:{ticks:{color:'#e2e8f0'}}, y:{ticks:{color:'#e2e8f0'}, beginAtZero:true} } },
+      data:{
+        labels,
+        datasets:[{
+          label:'Earnings ($)',
+          data:earnings,
+          backgroundColor: barColors,
+          borderColor:'#0ea5e9',
+          borderWidth:1.2,
+          hoverBackgroundColor: barColors
+        }]
+      },
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:(ctx)=>'$'+ctx.raw.toFixed(2)}}
+        },
+        scales:{
+          x:{ticks:{color:'#e2e8f0'}},
+          y:{ticks:{color:'#e2e8f0'}, beginAtZero:true}
+        }
+      },
       plugins:['glow']
     });
 
     hoursChart = new Chart(hctx, {
       type:'line',
-      data:{ labels, datasets:[{ label:'Hours Worked', data:hours, fill:true, borderColor:'#60a5fa', backgroundColor:hoursFill, tension:.35, pointRadius:3, pointHoverRadius:4, pointBackgroundColor:'#38bdf8' }]},
-      options:{ responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>`${ctx.raw.toFixed(2)} h`}}}, scales:{ x:{ticks:{color:'#e2e8f0'}}, y:{ticks:{color:'#e2e8f0'}, beginAtZero:true} } },
+      data:{
+        labels,
+        datasets:[{
+          label:'Hours Worked',
+          data:hours,
+          fill:true,
+          borderColor:'#60a5fa',
+          backgroundColor:hoursFill,
+          tension:.35,
+          pointRadius:3,
+          pointHoverRadius:4,
+          pointBackgroundColor:'#38bdf8'
+        }]
+      },
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:(ctx)=>`${ctx.raw.toFixed(2)} h`}}
+        },
+        scales:{
+          x:{ticks:{color:'#e2e8f0'}},
+          y:{ticks:{color:'#e2e8f0'}, beginAtZero:true}
+        }
+      },
       plugins:['glow']
     });
   }
 
-  document.getElementById('exportClose').onclick = ()=>{ exportBackdrop.classList.remove('show'); };
+  /* ===== Predictions ===== */
+  function openPredictions(){
+    const last7 = rangeDays(7);
+    const today0 = startOfDay(Date.now());
+    const earningsSeries = last7.map(d=>{
+      const fx = sumEntriesBetween(d, d+86400000);
+      const live = (d===today0) ? currentSessionContributionSince(d) : {amount:0,ms:0};
+      return +(fx.amount + live.amount).toFixed(2);
+    });
+    const total7 = earningsSeries.reduce((a,b)=>a+b,0);
+    const avgDay = total7/7;
 
-  document.getElementById('start').onclick = startTimer;
-  document.getElementById('stop').onclick  = stopTimer;
-  document.getElementById('clear').onclick = clearTimer;
+    predDaily.textContent    = fmtMoney(avgDay);
+    predWeekly.textContent   = fmtMoney(avgDay*7);
+    predBiWeekly.textContent = fmtMoney(avgDay*14);
+    predMonthly.textContent  = fmtMoney(avgDay*30);
+    predYearly.textContent   = fmtMoney(avgDay*365);
+
+    if (avgDay > 0){
+      predictionHint.textContent =
+        `If you keep this 7-day pace, you’ll hit about ${fmtMoney(avgDay*30)} per month.`;
+    } else {
+      predictionHint.textContent = 'Start a few work sessions to see realistic predictions.';
+    }
+
+    predictionBackdrop.classList.add('show');
+    syncOverlays();
+  }
+  predictionClose.onclick = ()=>{
+    predictionBackdrop.classList.remove('show');
+    syncOverlays();
+  };
+
+  /* ===== Job Reminder (coming soon panel) ===== */
+  function openJobReminder(){
+    jobReminderBackdrop.classList.add('show');
+    syncOverlays();
+  }
+  function closeJobReminder(){
+    jobReminderBackdrop.classList.remove('show');
+    syncOverlays();
+  }
+  if (jobReminderClose){
+    jobReminderClose.onclick = closeJobReminder;
+  }
+
+  /* ===== Menu / Buttons wiring ===== */
+  exportClose.onclick = ()=>{ exportBackdrop.classList.remove('show'); };
+
+  startBtn.onclick = startTimer;
+  stopBtn.onclick  = stopTimer;
+  clearBtn.onclick = clearTimer;
 
   function toggleMenu(forceOpen){
-    const willOpen = typeof forceOpen === 'boolean' ? forceOpen : !menuPanel.classList.contains('show');
+    const willOpen = typeof forceOpen === 'boolean'
+      ? forceOpen
+      : !menuPanel.classList.contains('show');
     menuPanel.classList.toggle('show', willOpen);
     menuPanel.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
     menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
@@ -1200,14 +1979,20 @@
   menuBtn.onclick = ()=> toggleMenu();
   closeMenu.onclick = ()=> toggleMenu(false);
 
-  menuGoals.onclick    = ()=>{ toggleMenu(false); openGoals(); syncOverlays(); };
-  menuSummary.onclick  = ()=>{ alert('Summary: coming next.'); };
-  menuCalc.onclick     = ()=>{ alert('Calculator: coming next.'); };
-  menuExpenses.onclick = ()=>{ toggleMenu(false); openExpenses(); syncOverlays(); };
+  menuGoals.onclick    = ()=>{ toggleMenu(false); openGoals(); };
+  menuSummary.onclick  = ()=>{ toggleMenu(false); alert('Summary: coming soon.'); };
+  menuCalc.onclick     = ()=>{ toggleMenu(false); alert('Calculator: coming soon.'); };
+  menuExpenses.onclick = ()=>{ toggleMenu(false); openExpenses(); };
+  if (menuJobReminder){
+    menuJobReminder.onclick = ()=>{ toggleMenu(false); openJobReminder(); };
+  }
+  if (menuPredictions){
+    menuPredictions.onclick = ()=>{ toggleMenu(false); openPredictions(); };
+  }
 
-  document.getElementById('goalsClose').onclick = ()=> { closeGoals(); syncOverlays(); };
+  goalsClose.onclick = ()=>{ closeGoals(); };
 
-  /* 🔒 Hide Menu/History/Stats while History panel is open */
+  /* 🔒 Hide Menu/History/Stats while History is open */
   function setMainButtonsVisible(show){
     const disp = show ? 'inline-flex' : 'none';
     menuBtn.style.display = disp;
@@ -1217,8 +2002,9 @@
 
   historyBtn.onclick = ()=>{
     updateTotals();
-    historyPanel.classList.toggle('show');
-    historyPanel.setAttribute('aria-hidden', historyPanel.classList.contains('show')?'false':'true');
+    const on = !historyPanel.classList.contains('show');
+    historyPanel.classList.toggle('show', on);
+    historyPanel.setAttribute('aria-hidden', on ? 'false' : 'true');
     syncOverlays();
   };
   closeHistory.onclick = ()=>{
@@ -1227,76 +2013,157 @@
     syncOverlays();
   };
 
-  discardBtn.onclick = ()=>{ saveBackdrop.classList.remove('show'); vibrate(8); playSound(350, 50); syncOverlays(); };
-  saveBtn.onclick = ()=>{ saveHistory(); syncOverlays(); };
+  discardBtn.onclick = ()=>{
+    saveBackdrop.classList.remove('show');
+    vibrate(8); playSound(350, 50);
+    syncOverlays();
+  };
+  saveBtn.onclick = ()=>{
+    saveHistory();
+    syncOverlays();
+  };
 
-  editCancel.onclick = ()=>{ editBackdrop.classList.remove('show'); editingId=null; syncOverlays(); };
-  editSave.onclick = ()=>{ applyEdit(); syncOverlays(); };
+  editCancel.onclick = ()=>{
+    editBackdrop.classList.remove('show');
+    editingId = null;
+    syncOverlays();
+  };
+  editSave.onclick = ()=>{
+    applyEdit();
+    syncOverlays();
+  };
 
-  confirmNo.onclick = ()=>{ confirmBackdrop.classList.remove('show'); pendingDeleteId=null; syncOverlays(); };
+  confirmNo.onclick = ()=>{
+    confirmBackdrop.classList.remove('show');
+    pendingDeleteId = null;
+    syncOverlays();
+  };
   confirmYes.onclick = ()=>{
     if (pendingDeleteId){
       history = history.filter(h=>String(h.id)!==String(pendingDeleteId));
       saveHistoryStore();
-      renderHistory(); updateTotals(); vibrate(15); playSound(500, 60);
+      renderHistory();
+      updateTotals();
+      vibrate(15); playSound(500, 60);
     }
     pendingDeleteId = null;
     confirmBackdrop.classList.remove('show');
     syncOverlays();
   };
 
-  function openSettings(){ themeSelect.value=prefs.theme; soundToggle.checked=prefs.sound; hapticsToggle.checked=prefs.haptics; settingsBackdrop.classList.add('show'); syncOverlays(); }
+  /* ===== Settings panel ===== */
+  function openSettings(){
+    themeSelect.value = prefs.theme;
+    soundToggle.checked = prefs.sound;
+    hapticsToggle.checked = prefs.haptics;
+    settingsBackdrop.classList.add('show');
+    syncOverlays();
+  }
   settingsBtnFloat.onclick = openSettings;
-  settingsClose.onclick = ()=>{ settingsBackdrop.classList.remove('show'); syncOverlays(); };
+  settingsClose.onclick = ()=>{
+    settingsBackdrop.classList.remove('show');
+    syncOverlays();
+  };
   settingsSave.onclick = ()=>{
     prefs.theme = themeSelect.value === 'light' ? 'light' : 'dark';
     prefs.sound = !!soundToggle.checked;
     prefs.haptics = !!hapticsToggle.checked;
-    applyTheme(); savePrefs();
+    applyTheme();
+    savePrefs();
     settingsBackdrop.classList.remove('show');
     vibrate(8); playSound(700, 70);
     syncOverlays();
   };
-  settingsBackdrop.addEventListener('click', (e)=>{ if (e.target===settingsBackdrop){ settingsBackdrop.classList.remove('show'); syncOverlays(); } });
-
-  startAtBtn.onclick = ()=>{ startAtInput.value = toLocalInput(Date.now()); startAtBackdrop.classList.add('show'); syncOverlays(); };
-  document.getElementById('startAtCancel').onclick = ()=>{ startAtBackdrop.classList.remove('show'); syncOverlays(); };
-  document.getElementById('startAtSave').onclick = ()=>{
-    const val = startAtInput.value; if (!val){ alert('Pick a valid date/time.'); return; }
-    const ts = fromLocalInput(val); const now = Date.now();
-    if (ts <= now){
-      startWallTs = ts; elapsed = now - ts; startTime = now - elapsed; running = true;
-      startInterval(); vibrate(12); playSound(1200, 80);
-      scheduledStartTs = null; saveState(); updateDisplays(elapsed);
-    } else {
-      scheduledStartTs = ts; startWallTs = ts; elapsed = 0; running = false;
-      if (interval){ clearInterval(interval); interval=null; } updateDisplays(0);
-      vibrate(8); playSound(900, 70); saveState();
+  settingsBackdrop.addEventListener('click', (e)=>{
+    if (e.target === settingsBackdrop){
+      settingsBackdrop.classList.remove('show');
+      syncOverlays();
     }
-    startAtBackdrop.classList.remove('show'); syncOverlays();
+  });
+
+  /* ===== Start At / Stop At scheduling ===== */
+  startAtBtn.onclick = ()=>{
+    startAtInput.value = toLocalInput(Date.now());
+    startAtBackdrop.classList.add('show');
+    syncOverlays();
+  };
+  startAtCancel.onclick = ()=>{
+    startAtBackdrop.classList.remove('show');
+    syncOverlays();
+  };
+  startAtSave.onclick = ()=>{
+    const val = startAtInput.value;
+    if (!val){ alert('Pick a valid date/time.'); return; }
+    const ts = fromLocalInput(val);
+    const now = Date.now();
+    if (ts <= now){
+      // backfill elapsed & start immediately
+      startWallTs = ts;
+      elapsed = now - ts;
+      startTime = now - elapsed;
+      running = true;
+      startInterval();
+      vibrate(12); playSound(1200, 80);
+      scheduledStartTs = null;
+      saveState();
+      updateDisplays(elapsed);
+    } else {
+      // schedule for future
+      scheduledStartTs = ts;
+      startWallTs = ts;
+      elapsed = 0;
+      running = false;
+      if (interval){ clearInterval(interval); interval = null; }
+      updateDisplays(0);
+      vibrate(8); playSound(900, 70);
+      saveState();
+    }
+    startAtBackdrop.classList.remove('show');
+    syncOverlays();
   };
 
-  stopAtBtn.onclick = ()=>{ stopAtInput.value = toLocalInput(Date.now()); stopAtBackdrop.classList.add('show'); syncOverlays(); };
-  document.getElementById('stopAtCancel').onclick = ()=>{ stopAtBackdrop.classList.remove('show'); syncOverlays(); };
-  document.getElementById('stopAtSave').onclick = ()=>{
-    const val = stopAtInput.value; if (!val){ alert('Pick a valid date/time.'); return; }
+  stopAtBtn.onclick = ()=>{
+    stopAtInput.value = toLocalInput(Date.now());
+    stopAtBackdrop.classList.add('show');
+    syncOverlays();
+  };
+  stopAtCancel.onclick = ()=>{
+    stopAtBackdrop.classList.remove('show');
+    syncOverlays();
+  };
+  stopAtSave.onclick = ()=>{
+    const val = stopAtInput.value;
+    if (!val){ alert('Pick a valid date/time.'); return; }
     if (!startWallTs){ alert('No active session to stop.'); return; }
-    const ts = fromLocalInput(val); const now = Date.now();
+    const ts = fromLocalInput(val);
+    const now = Date.now();
     if (ts <= now){
       finalizeActiveBreak();
-      running = false; if (interval){ clearInterval(interval); interval=null; }
-      endWallTs = ts; elapsed = Math.max(0, endWallTs - startWallTs); updateDisplays(elapsed);
-      saveState(); saveBackdrop.classList.add('show'); vibrate(16); playSound(600, 90);
+      running = false;
+      if (interval){ clearInterval(interval); interval = null; }
+      endWallTs = ts;
+      elapsed = Math.max(0, endWallTs - startWallTs);
+      updateDisplays(elapsed);
+      saveState();
+      saveBackdrop.classList.add('show');
+      vibrate(16); playSound(600, 90);
       scheduledStopTs = null;
     } else {
-      scheduledStopTs = ts; vibrate(8); playSound(800, 70); saveState();
+      scheduledStopTs = ts;
+      vibrate(8); playSound(800, 70);
+      saveState();
     }
-    stopAtBackdrop.classList.remove('show'); syncOverlays();
+    stopAtBackdrop.classList.remove('show');
+    syncOverlays();
   };
 
+  /* ===== Break controls ===== */
   takeBreakBtn.onclick = ()=>{
     if (onBreak) return;
-    if (running){ running = false; if (interval){ clearInterval(interval); interval=null; } }
+    if (running){
+      running = false;
+      if (interval){ clearInterval(interval); interval=null; }
+    }
     onBreak = true;
     breakStartTs = Date.now();
     showBreak();
@@ -1324,11 +2191,7 @@
     vibrate(14); playSound(900, 80);
   };
 
-  [startAtBackdrop, stopAtBackdrop, exportBackdrop, confirmBackdrop, editBackdrop, saveBackdrop].forEach(el=>{
-    el.addEventListener('click', (e)=>{ if (e.target===el){ el.classList.remove('show'); syncOverlays(); } });
-  });
-
-  /* ===== Inbox gating ===== */
+  /* ===== Inbox gating & overlays ===== */
   function anyOverlayOpen(){
     return (
       menuPanel.classList.contains('show') ||
@@ -1343,14 +2206,21 @@
       stopAtBackdrop.classList.contains('show') ||
       exportBackdrop.classList.contains('show') ||
       expensesPanel.classList.contains('show') ||
-      inboxPanel.classList.contains('show')
+      inboxPanel.classList.contains('show') ||
+      jobReminderBackdrop.classList.contains('show') ||
+      predictionBackdrop.classList.contains('show')
     );
   }
   function isMainScreen(){ return !anyOverlayOpen(); }
+
   function refreshInboxBtnVisibility(){
     inboxBtn.style.display = isMainScreen() ? 'inline-flex' : 'none';
-    inboxBtn.setAttribute('aria-expanded', inboxPanel.classList.contains('show') ? 'true' : 'false');
+    inboxBtn.setAttribute(
+      'aria-expanded',
+      inboxPanel.classList.contains('show') ? 'true' : 'false'
+    );
   }
+
   function openInbox(){
     if (!isMainScreen()) return;
     inboxPanel.classList.add('show');
@@ -1369,13 +2239,16 @@
 
   function observeOverlay(el){
     if (!el) return;
-    new MutationObserver(()=>{ syncOverlays(); }).observe(el, { attributes:true, attributeFilter:['class','style'] });
+    new MutationObserver(()=>{ syncOverlays(); })
+      .observe(el, { attributes:true, attributeFilter:['class','style'] });
   }
-  [menuPanel, historyPanel, goalsPanel, statsBackdrop, settingsBackdrop,
-   saveBackdrop, editBackdrop, confirmBackdrop, startAtBackdrop, stopAtBackdrop, exportBackdrop, expensesPanel, inboxPanel]
-   .forEach(observeOverlay);
+  [
+    menuPanel, historyPanel, goalsPanel, statsBackdrop, settingsBackdrop,
+    saveBackdrop, editBackdrop, confirmBackdrop, startAtBackdrop,
+    stopAtBackdrop, exportBackdrop, expensesPanel, inboxPanel,
+    jobReminderBackdrop, predictionBackdrop
+  ].forEach(observeOverlay);
 
-  /* 🔒 Centralized sync: toggle blocker + inbox gating + hide main buttons on History */
   function syncOverlays(){
     const open = anyOverlayOpen();
     blocker.style.display = open ? 'block' : 'none';
@@ -1385,7 +2258,7 @@
   }
   blocker.addEventListener('click', (e)=>{ e.stopPropagation(); });
 
-  /* ===== Expenses (continues in PART 2) ===== */
+  /* ===== Expenses ===== */
   const CATEGORY_KEYWORDS = [
     {cat:'Groceries', words:['walmart','target','aldi','kroger','publix','safeway','food lion','trader joe','whole foods','grocery']},
     {cat:'Restaurants', words:['restaurant','diner','cafe','bistro','grill','pizza','taco','sub','burger','mcdonald','kfc','chick-fil-a','chipotle','shake shack','popeyes','wendy','bk','domino']},
@@ -1434,7 +2307,14 @@
     const note = (xpNote.value||'').trim();
     if (!(amt>0) || !dateStr){ alert('Enter amount and date.'); return; }
     const ts = new Date(dateStr+'T12:00:00').getTime();
-    const it = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), ts, amount:amt, merchant: merch || 'Unknown', category: cat, note };
+    const it = {
+      id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      ts,
+      amount:amt,
+      merchant: merch || 'Unknown',
+      category: cat,
+      note
+    };
     expenses.unshift(it);
     saveExpenses();
     xpAmount.value=''; xpMerchant.value=''; xpNote.value='';
@@ -1455,11 +2335,23 @@
       const amount = +(+a||0).toFixed(2);
       if (!(isFinite(ts) && amount>0)) continue;
       const cat = c || guessCategory(m);
-      expenses.unshift({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts, amount, merchant:m, category:cat, note:'' });
+      expenses.unshift({
+        id: Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+        ts,
+        amount,
+        merchant:m,
+        category:cat,
+        note:''
+      });
       imported++;
     }
-    if (imported) { saveExpenses(); renderExpensesUI(); vibrate(20); playSound(1100, 80); }
-    else alert('No valid rows found.');
+    if (imported){
+      saveExpenses();
+      renderExpensesUI();
+      vibrate(20); playSound(1100, 80);
+    } else {
+      alert('No valid rows found.');
+    }
   };
 
   xpClearMonthBtn.onclick = ()=>{
@@ -1469,7 +2361,8 @@
     if (!confirm('Delete all expenses for the current month?')) return;
     const before = expenses.length;
     expenses = expenses.filter(e=> !(e.ts>=m0 && e.ts<m1));
-    saveExpenses(); renderExpensesUI();
+    saveExpenses();
+    renderExpensesUI();
     alert(`Removed ${before - expenses.length} item(s).`);
   };
 
@@ -1482,7 +2375,9 @@
     const total = monthItems.reduce((a,b)=>a+b.amount,0);
 
     const catMap = {};
-    for (const e of monthItems){ catMap[e.category] = (catMap[e.category]||0) + e.amount; }
+    for (const e of monthItems){
+      catMap[e.category] = (catMap[e.category]||0) + e.amount;
+    }
     const catEntries = Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
     const top = catEntries[0] || ['—',0];
 
@@ -1490,14 +2385,18 @@
     const planned = Object.values(budgets).reduce((a,b)=>a+(+b||0),0) || 0;
     if (planned>0){
       const pct = Math.min(9999, Math.max(0, total/planned*100)).toFixed(0);
-      const cls = total <= planned*0.8 ? 'budget-ok' : total <= planned ? 'budget-warn' : 'budget-bad';
+      const cls = total <= planned*0.8 ? 'budget-ok'
+                : total <= planned ? 'budget-warn'
+                : 'budget-bad';
       xpBudgetHint.innerHTML = `Planned: ${fmtMoney(planned)} • <span class="${cls}">${pct}%</span> of budget`;
     } else {
       xpBudgetHint.textContent = 'No budget set';
     }
 
     xpTopCat.textContent = top[0];
-    xpTopCatShare.textContent = top[1] ? `${fmtMoney(top[1])} (${(top[1]/Math.max(1,total)*100).toFixed(1)}%)` : '—';
+    xpTopCatShare.textContent = top[1]
+      ? `${fmtMoney(top[1])} (${(top[1]/Math.max(1,total)*100).toFixed(1)}%)`
+      : '—';
 
     xpList.innerHTML = '';
     monthItems.sort((a,b)=>b.ts-a.ts).forEach(e=>{
@@ -1523,7 +2422,8 @@
       btn.onclick = ()=>{
         const id = btn.getAttribute('data-xp-del');
         expenses = expenses.filter(x=>x.id!==id);
-        saveExpenses(); renderExpensesUI();
+        saveExpenses();
+        renderExpensesUI();
       };
     });
     xpList.querySelectorAll('[data-xp-edit]').forEach(btn=>{
@@ -1538,9 +2438,14 @@
         const nn = prompt('Edit note:', it.note ?? '') || '';
         const ts = new Date(nd+'T12:00:00').getTime();
         const amt = +(+na||0).toFixed(2);
-        if (!(isFinite(ts)&&amt>0)) { alert('Invalid values.'); return; }
-        it.ts = ts; it.merchant = nm.trim()||'Unknown'; it.amount = amt; it.category = nc; it.note = nn;
-        saveExpenses(); renderExpensesUI();
+        if (!(isFinite(ts)&&amt>0)){ alert('Invalid values.'); return; }
+        it.ts = ts;
+        it.merchant = nm.trim()||'Unknown';
+        it.amount = amt;
+        it.category = nc;
+        it.note = nn;
+        saveExpenses();
+        renderExpensesUI();
       };
     });
 
@@ -1552,11 +2457,15 @@
     const out = [];
     const now = new Date();
     for (let i=n-1;i>=0;i--){
-      const y = now.getFullYear(), m = now.getMonth()-i;
+      const y = now.getFullYear();
+      const m = now.getMonth()-i;
       const d0 = new Date(y, m, 1).getTime();
       const d1 = new Date(y, m+1, 1).getTime();
-      const sum = expenses.filter(e=>e.ts>=d0 && e.ts<d1).reduce((a,b)=>a+b.amount,0);
-      const label = new Date(y, m, 1).toLocaleString(undefined,{month:'short'});
+      const sum = expenses
+        .filter(e=>e.ts>=d0 && e.ts<d1)
+        .reduce((a,b)=>a+b.amount,0);
+      const label = new Date(y, m, 1)
+        .toLocaleString(undefined,{month:'short'});
       out.push({label, sum});
     }
     return out;
@@ -1569,10 +2478,24 @@
     const pieCtx = xpPieCanvas.getContext('2d');
     xpPie = new Chart(pieCtx, {
       type:'doughnut',
-      data:{labels, datasets:[{data, backgroundColor:[
-        '#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b','#ef4444','#22d3ee','#10b981','#f472b6','#94a3b8','#eab308'
-      ], borderColor:'#0b1224', borderWidth:2}]},
-      options:{cutout:'60%', plugins:{legend:{labels:{color:'#e2e8f0'}}}}
+      data:{
+        labels,
+        datasets:[{
+          data,
+          backgroundColor:[
+            '#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b',
+            '#ef4444','#22d3ee','#10b981','#f472b6','#94a3b8','#eab308'
+          ],
+          borderColor:'#0b1224',
+          borderWidth:2
+        }]
+      },
+      options:{
+        cutout:'60%',
+        plugins:{
+          legend:{labels:{color:'#e2e8f0'}}
+        }
+      }
     });
 
     if (xpTrend) xpTrend.destroy();
@@ -1581,25 +2504,58 @@
     const sums = series.map(x=>+x.sum.toFixed(2));
     const area = {top:0,bottom:180};
     const g = tctx.createLinearGradient(0, area.top, 0, area.bottom);
-    g.addColorStop(0,'rgba(239,68,68,0.35)'); g.addColorStop(1,'rgba(239,68,68,0.05)');
+    g.addColorStop(0,'rgba(239,68,68,0.35)');
+    g.addColorStop(1,'rgba(239,68,68,0.05)');
     xpTrend = new Chart(tctx, {
       type:'line',
-      data:{labels:labels2, datasets:[{ label:'Monthly spend', data:sums, borderColor:'#ef4444', backgroundColor:g, fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#f87171' }]},
-      options:{ plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>fmtMoney(ctx.raw)}}}, scales:{x:{ticks:{color:'#e2e8f0'}}, y:{ticks:{color:'#e2e8f0'}, beginAtZero:true} } },
+      data:{
+        labels:labels2,
+        datasets:[{
+          label:'Monthly spend',
+          data:sums,
+          borderColor:'#ef4444',
+          backgroundColor:g,
+          fill:true,
+          tension:.35,
+          pointRadius:3,
+          pointBackgroundColor:'#f87171'
+        }]
+      },
+      options:{
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:(ctx)=>fmtMoney(ctx.raw)}}
+        },
+        scales:{
+          x:{ticks:{color:'#e2e8f0'}},
+          y:{ticks:{color:'#e2e8f0'}, beginAtZero:true}
+        }
+      },
       plugins:['glow']
     });
   }
 
   function renderSuggestions(catEntries, monthItems){
     xpSuggestions.innerHTML = '';
-    if (!monthItems.length){ xpSuggestions.innerHTML = '<li>Add a few expenses to see insights.</li>'; return; }
+    if (!monthItems.length){
+      xpSuggestions.innerHTML = '<li>Add a few expenses to see insights.</li>';
+      return;
+    }
 
     const total = monthItems.reduce((a,b)=>a+b.amount,0);
     const byMerchant = {};
-    for (const e of monthItems){ const key=e.merchant.toLowerCase(); byMerchant[key]=(byMerchant[key]||0)+e.amount; }
-    const topMerch = Object.entries(byMerchant).sort((a,b)=>b[1]-a[1])[0];
+    for (const e of monthItems){
+      const key = e.merchant.toLowerCase();
+      byMerchant[key] = (byMerchant[key]||0) + e.amount;
+    }
+    const topMerch = Object.entries(byMerchant)
+      .sort((a,b)=>b[1]-a[1])[0];
 
-    const add = s => { const li=document.createElement('li'); li.textContent=s; xpSuggestions.appendChild(li); };
+    const add = s=>{
+      const li = document.createElement('li');
+      li.textContent = s;
+      xpSuggestions.appendChild(li);
+    };
 
     const top = catEntries[0];
     if (top){
@@ -1613,8 +2569,13 @@
       }
     }
 
-    const subMerchants = ['netflix','spotify','hulu','disney','max','apple','adobe','xbox','playstation','icloud','youtube','patreon'];
-    const subs = monthItems.filter(e=>subMerchants.some(s=>e.merchant.toLowerCase().includes(s)));
+    const subMerchants = [
+      'netflix','spotify','hulu','disney','max','apple','adobe',
+      'xbox','playstation','icloud','youtube','patreon'
+    ];
+    const subs = monthItems.filter(e=>
+      subMerchants.some(s=>e.merchant.toLowerCase().includes(s))
+    );
     if (subs.length){
       const s = subs.map(e=>`${e.merchant} ${fmtMoney(e.amount)}`).join(', ');
       add(`Recurring suspects: ${s}. Verify if you still use them.`);
@@ -1629,26 +2590,43 @@
     }
 
     const thisWeekStart = (()=>{
-      const d = new Date(); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return +x;
+      const d = new Date();
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dow = x.getDay();
+      x.setDate(x.getDate()-dow);
+      x.setHours(0,0,0,0);
+      return +x;
     })();
     const lastWeekStart = thisWeekStart - 7*86400000;
-    const thisWeek = expenses.filter(e=>e.ts>=thisWeekStart).reduce((a,b)=>a+b.amount,0);
-    const lastWeek = expenses.filter(e=>e.ts>=lastWeekStart && e.ts<thisWeekStart).reduce((a,b)=>a+b.amount,0);
+    const thisWeek = expenses
+      .filter(e=>e.ts>=thisWeekStart)
+      .reduce((a,b)=>a+b.amount,0);
+    const lastWeek = expenses
+      .filter(e=>e.ts>=lastWeekStart && e.ts<thisWeekStart)
+      .reduce((a,b)=>a+b.amount,0);
     if (lastWeek>0 && thisWeek > lastWeek*1.3 && thisWeek - lastWeek > 50){
       add(`Spending is up ${((thisWeek/lastWeek-1)*100).toFixed(0)}% vs last week. Decide what to cut for the next 3 days.`);
     }
   }
 
+  /* ===== Global state save/load ===== */
   function saveState(){
     const state = {
-      running, startWallTs, endWallTs, elapsed,
+      running,
+      startWallTs,
+      endWallTs,
+      elapsed,
       rate: parseFloat(rateInput.value)||0,
       lastSaved: Date.now(),
-      scheduledStartTs, scheduledStopTs,
-      onBreak, breakStartTs, sessionBreakMs
+      scheduledStartTs,
+      scheduledStopTs,
+      onBreak,
+      breakStartTs,
+      sessionBreakMs
     };
     try{ localStorage.setItem(STORE_KEY_STATE, JSON.stringify(state)); }catch{}
   }
+
   function loadState(){
     try{
       const raw = localStorage.getItem(STORE_KEY_STATE);
@@ -1665,19 +2643,23 @@
       breakStartTs = typeof s.breakStartTs === 'number' ? s.breakStartTs : null;
       sessionBreakMs = typeof s.sessionBreakMs === 'number' ? s.sessionBreakMs : 0;
 
-      if (onBreak && breakStartTs){ showBreak(); startBreakTicker(); }
+      if (onBreak && breakStartTs){
+        showBreak();
+        startBreakTicker();
+      }
       if (running && startWallTs){
         const now = Date.now();
         elapsed = Math.max(0, now - startWallTs);
         startTime = now - elapsed;
         update();
         startInterval();
-      }else{
+      } else {
         updateDisplays(elapsed);
       }
     }catch(e){}
   }
 
+  /* ===== Initial boot ===== */
   loadPrefs(); applyTheme();
   loadGoals();
   loadHistoryStore(); renderHistory(); updateTotals();
@@ -1685,19 +2667,19 @@
   loadExpenses();
   loadState();
 
-  function refreshInboxBtnVisibility(){ /* keep latest */ 
-    inboxBtn.style.display = !anyOverlayOpen() ? 'inline-flex' : 'none';
-    inboxBtn.setAttribute('aria-expanded', inboxPanel.classList.contains('show') ? 'true' : 'false');
-  }
-
   syncOverlays();
-  window.addEventListener('beforeunload', ()=>{ saveState(); savePrefs(); saveGoals(); saveBudgets(); saveExpenses(); });
-  document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ saveState(); savePrefs(); saveGoals(); saveBudgets(); saveExpenses(); } });
 
+  window.addEventListener('beforeunload', ()=>{
+    saveState(); savePrefs(); saveGoals(); saveBudgets(); saveExpenses();
+  });
+  document.addEventListener('visibilitychange', ()=>{
+    if (document.hidden){
+      saveState(); savePrefs(); saveGoals(); saveBudgets(); saveExpenses();
+    }
+  });
+
+  // main loop
   setInterval(()=>{ update(); syncOverlays(); }, 1000/60);
 </script>
 </body>
 </html>
-
-
-
