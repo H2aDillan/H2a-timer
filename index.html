@@ -5,10 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />  
 <title>Earnings Timer — Neon Build</title>  
 
-<!-- 🔄 Force fresh load -->  
 <script>  
 (function(){  
-  const APP_VERSION = "24"; /* blocker update */  
+  const APP_VERSION = "36"; /* Pro UI Fixes + Intro */  
   const KEY = "ver_guard_seen";  
   try {  
     const url  = new URL(location.href);  
@@ -43,12 +42,119 @@
     display:flex;flex-direction:column;align-items:center;justify-content:center;  
     height:100vh;margin:0;overflow:hidden  
   }  
+  
+  /* --- NEW: Intro Splash Screen --- */
+  #introOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: opacity 0.5s ease;
+  }
+  #introOverlay.hide {
+    opacity: 0;
+    pointer-events: none;
+  }
+  #introTitle {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--cyan);
+    text-shadow: var(--glow-cyan);
+    animation: pulse-text 1.5s ease-in-out infinite;
+  }
+  #introSubtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-top: 8px;
+    animation: pulse-text 1.5s ease-in-out infinite;
+    animation-delay: 0.1s;
+  }
+  @keyframes pulse-text {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+
 
   .top{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:8px;z-index:5}  
+  
+  /* NEW: Top Right Buttons */
+  .top-right-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 5;
+  }
+  .header-icon-btn {
+    background: linear-gradient(180deg, #17233f, #0f1a35);
+    color: #fff;
+    border: 1px solid #2a3a64;
+    border-radius: 50%; /* Circle */
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s;
+    position: relative; /* For the badge */
+  }
+  .header-icon-btn:hover { background: #1b2a52; }
+  .header-icon-btn svg { width: 22px; height: 22px; stroke: #e5e7eb; }
+  
+  /* NEW: Inbox Badge */
+  .header-icon-btn.has-new-message::after {
+    content: '1';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    background: var(--red);
+    border-radius: 50%;
+    border: 2px solid var(--panel-2);
+    box-shadow: 0 0 10px var(--red);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    animation: pulse-red 1.5s infinite;
+  }
+  
+  @keyframes pulse-red {
+    0% { transform: scale(0.9); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(0.9); opacity: 1; }
+  }
+
 
   .rate-wrap{display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#1a2547,#121a35);border:1px solid #334155;border-radius:10px;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.25)}  
 
   input[type="number"]{width:110px;padding:6px 6px;border:none;outline:none;font-size:16px;text-align:right;background:transparent;color:var(--text)}  
+  /* Make all number inputs consistent */
+  input[type="number"], input[type="datetime-local"], input[type="date"], input[type="text"], select, textarea {
+    width: 100%;
+    background: #0b1224;
+    border: 1px solid #2b3f6f;
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 15px;
+  }
+  input[type="number"]{text-align:left;width:auto;} /* Override for general */
+  .rate-wrap input[type="number"]{width:110px; padding:6px 6px; font-size:16px; text-align:right; background:transparent; border:none;} /* Restore specificity */
+
 
   .timer{font-size:3rem;margin-bottom:6px;text-shadow:0 0 12px rgba(96,165,250,.25)}  
   .amount{font-size:3rem;color:var(--green);margin-bottom:10px;text-shadow:0 0 16px rgba(34,197,94,.4)}  
@@ -146,7 +252,7 @@
 
   #settingsBtnFloat{  
     position:absolute;right:20px;bottom:20px;  
-    background:#0ea5e9;border:1px solid #0284c7;color:#0b1020;  
+    background:#0ea5e9;border:1px solid #0284c7;color:#ffffff; /* FIXED */
     border-radius:10px;padding:10px 14px;font-size:14px;  
     cursor:pointer;box-shadow:var(--glow-cyan)  
   }  
@@ -219,8 +325,8 @@
   @keyframes nearDonePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}  
 
   .goal-edit{display:flex;align-items:center;gap:8px;margin-top:10px}  
-  .goal-edit label{font-size:13px;color:var(--muted)}  
-  .goal-edit input{flex:1;background:#0b1224;border:1px solid #2b3f6f;border-radius:10px;padding:10px 12px;color:var(--text)}  
+  .goal-edit label{font-size:13px;color:var(--muted);flex-shrink:0;}  
+  .goal-edit input{flex:1;min-width:50px;}  
   .goal-edit button{background:linear-gradient(180deg,#22c55e,#13a24a);border:1px solid #15803d;color:#05210f;padding:10px 12px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:var(--glow-soft)}  
 
   /* 📈 Prediction Panel (uses Goals + History) */  
@@ -238,37 +344,236 @@
   #predictionHeader h3{margin:0;font-size:18px}  
   #predictionClose{background:#64748b;border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}  
 
+  /* NEW: Prediction Body (List Layout) */
   #predictionBody{  
-    padding:12px 16px;flex:1;overflow:auto;display:flex;flex-direction:column;gap:14px;  
+    padding:12px 16px;flex:1;overflow:auto;display:flex;flex-direction:column;gap:12px;  
   }  
 
-  .pred-subtitle{font-size:13px;color:var(--muted);margin:0 0 4px}  
+  .pred-list-card {
+    background: linear-gradient(180deg, #020617, #020617);
+    border-radius: 14px;
+    border: 1px solid #1f2937;
+    padding: 14px;
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.55);
+  }
+  .pred-list-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .pred-list-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .pred-list-dates {
+    font-size: 11px;
+    color: var(--cyan);
+    opacity: 0.8;
+  }
+  .pred-list-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .pred-list-goal {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .pred-list-prev {
+    font-size: 12px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+  .pred-list-prev.good { color: var(--green); }
+  .pred-list-prev.bad { color: var(--red); }
+  
+  /* Payday Card specific styles */
+  .pred-list-card.payday .pred-list-title {
+    color: var(--amber);
+  }
+  .pred-list-card.payday .pred-list-value {
+    color: var(--amber);
+  }
+  .pred-pay-inputs { 
+    display:flex; 
+    gap:10px; 
+    margin: 10px 0; 
+  }
+  .pred-pay-inputs label { font-size: 13px; color: var(--muted); flex: 1; }
+  .pred-pay-inputs input { width:100%; text-align:center; padding: 8px; font-size:14px; }
+  .pred-pay-hint { font-size:12px; color:var(--muted); margin-top:4px; }
+  
+  .pred-footer {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    text-align: center;
+  }
 
-  .pred-grid{  
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));  
-    gap:12px;  
-  }  
+  /* NEW: Calculator Panel */
+  #calcPanel {
+    position: fixed; inset: 0;
+    background: radial-gradient(1200px 800px at 20% 0%, #0e1b3a 0%, #0b1224 50%, #09101f 100%);
+    display: none; flex-direction: column; z-index: 42;
+  }
+  #calcPanel.show { display: flex; }
+  #calcHeader {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid #2b3f6f; background: #0b1224;
+  }
+  #calcHeader h3 { margin: 0; font-size: 18px; }
+  #calcClose { background: #64748b; border: none; color: #fff; border-radius: 8px; padding: 8px 12px; font-size: 14px; cursor: pointer; }
+  #calcBody {
+    padding: 12px 16px; display: flex; flex-direction: column; gap: 16px;
+    overflow: auto; flex: 1;
+  }
+  .calc-card {
+    background: linear-gradient(180deg, #0f172a, #0c1426);
+    border: 1px solid #2b3f6f; border-radius: 14px; padding: 14px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .28);
+  }
+  .calc-card h4 { margin: 0 0 4px; color: var(--cyan); }
+  .calc-example { font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: 10px; }
+  .calc-field { display:flex; flex-direction:column; gap: 6px; margin-bottom: 12px; }
+  .calc-field label { font-size: 13px; color: var(--muted); }
+  .calc-field input { width: 100%; }
+  .calc-result { font-size: 18px; font-weight: 800; color: var(--green); margin-top: 8px;}
 
-  .pred-card{  
-    background:linear-gradient(180deg,#020617,#020617);  
-    border-radius:14px;border:1px solid #1f2937;  
-    padding:12px;  
-    box-shadow:0 14px 26px rgba(0,0,0,.55);  
-  }  
+  /* NEW: Heatmap Panel */
+  #heatmapPanel {
+    position: fixed; inset: 0;
+    background: radial-gradient(1200px 800px at 20% 0%, #09101f 0%, #0b1224 50%, #0e1b3a 100%);
+    display: none; flex-direction: column; z-index: 43;
+  }
+  #heatmapPanel.show { display: flex; }
+  #heatmapHeader {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid #2b3f6f; background: #0b1224;
+  }
+  #heatmapHeader h3 { margin: 0; font-size: 18px; }
+  #heatmapClose { background: #64748b; border: none; color: #fff; border-radius: 8px; padding: 8px 12px; font-size: 14px; cursor: pointer; }
+  
+  /* NEW: Heatmap Body Layout */
+  #heatmapBody {
+    padding: 12px 16px; display: flex; flex-direction: column; gap: 10px;
+    overflow: auto; flex: 1;
+  }
+  .heatmap-month-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .heatmap-month-nav h4 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--cyan);
+    text-shadow: 0 0 8px var(--cyan);
+  }
+  .heatmap-month-nav button {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+  
+  .heatmap-legend {
+    display: flex; gap: 10px; align-items: center; justify-content: center; font-size: 12px; color: var(--muted);
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .legend-box { width: 12px; height: 12px; border-radius: 3px; }
+  .legend-box.good { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .legend-box.bad { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .legend-box.neutral { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
 
-  .pred-label{font-size:13px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}  
-  .pred-value{font-size:20px;font-weight:800;margin-bottom:4px;color:#e5e7eb}  
-  .pred-goal{font-size:12px;color:var(--muted);margin-bottom:4px}  
+  .heatmap-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 10px;
+  }
+  #heatmapGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+  }
+  .heatmap-day {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-height: 70px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 5px;
+    transition: all .2s;
+    opacity: 0.6;
+  }
+  .heatmap-day.other-month {
+    opacity: 0.3;
+    background: var(--bg);
+  }
+  .heatmap-day.spacer {
+    background: transparent;
+    border: none;
+    opacity: 0;
+  }
+  .heatmap-day.has-data {
+    cursor: pointer;
+    opacity: 1;
+  }
+  .heatmap-day.has-data:hover {
+    transform: scale(1.05);
+    border-color: var(--cyan);
+    z-index: 10;
+  }
+  .heatmap-day-amt {
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
 
-  .pred-status{  
-    font-size:12px;font-weight:700;  
-    padding:4px 8px;border-radius:999px;display:inline-block;  
-  }  
-  .pred-status.good{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.5)}  
-  .pred-status.bad{background:rgba(239,68,68,.12);color:#fecaca;border:1px solid rgba(248,113,113,.6)}  
-  .pred-status.neutral{background:rgba(148,163,184,.12);color:#cbd5f5;border:1px solid rgba(148,163,184,.6)}  
+  .heatmap-day.good {
+    background: #113423;
+    border-color: #166534;
+    color: #a7f3d0;
+  }
+  .heatmap-day.good .heatmap-day-amt { color: var(--green); }
+  
+  .heatmap-day.bad {
+    background: #3f1212;
+    border-color: #991b1b;
+    color: #fecaca;
+  }
+  .heatmap-day.bad .heatmap-day-amt { color: var(--red); }
 
-  .pred-note{font-size:12px;color:var(--muted);margin:4px 0 0}  
+  .heatmap-day.neutral {
+    background: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+  }
+  .heatmap-day.neutral .heatmap-day-amt { color: var(--blue); }
+  
 
   #historyPanel{  
     position:fixed;bottom:-75%;left:0;width:100%;max-height:75%;  
@@ -286,6 +591,18 @@
   }  
   #historyHeader .title{display:inline-flex;align-items:center;gap:8px}  
   #historyHeader h3{margin:0;font-size:18px}  
+  /* NEW: Export Button Style */
+  .btn-export-header {
+    background: #0ea5e9;
+    border: 1px solid #0284c7;
+    color: #ffffff; /* FIXED */
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--glow-cyan);
+  }
   #closeHistory{background:#dc2626;border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px}  
 
   #totals{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px;border-bottom:1px solid #2b3f6f}  
@@ -312,7 +629,6 @@
   .row-actions{display:flex;flex-direction:column;gap:6px}  
   .btn-small{background:#1a274a;border:1px solid #2a3a64;color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}  
   .btn-danger{background:#7f1d1d;border-color:#b91c1c}  
-  .btn-export{background:#0ea5e9;border-color:#0284c7;box-shadow:var(--glow-cyan)}  
 
   .backdrop{  
     position:fixed;inset:0;background:rgba(0,0,0,.6);  
@@ -334,6 +650,7 @@
     background:#0b1224;border:1px solid #2b3f6f;  
     border-radius:10px;padding:8px 10px;margin-top:8px  
   }  
+  .field input { border:none; padding:0; } /* override for modal fields */
 
   .actions{display:flex;gap:10px;margin-top:14px}  
   .actions button{flex:1;padding:10px;border:none;border-radius:10px;font-weight:bold;cursor:pointer}  
@@ -354,6 +671,8 @@
     background:#0f172a;border:1px solid #2b3f6f;  
     border-radius:10px;padding:10px 12px;margin-top:10px  
   }  
+  .setting-row .field { margin:0; padding:0; background:none; border:none; }
+  .setting-row .field select { padding: 8px 10px; }
 
   #statsBackdrop{  
     position:fixed;inset:0;background:rgba(3,6,14,.75);  
@@ -392,7 +711,9 @@
 
   canvas{  
     background:linear-gradient(180deg,#0b1224,#0f172a);  
-    border:1px solid #2b3f6f;border-radius:14px;margin-bottom:14px;  
+    /* border:1px solid #2b3f6f; */ /* REMOVED FRAME */
+    border: none;
+    border-radius:14px;margin-bottom:14px;  
     box-shadow:0 12px 28px rgba(0,0,0,.35), 0 0 24px rgba(96,165,250,.15)  
   }  
 
@@ -402,28 +723,102 @@
   .break-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;text-align:center}  
   .break-summary-grid div{background:#0f172a;border:1px solid #2b3f6f;border-radius:12px;padding:10px;box-shadow:0 0 10px rgba(34,197,94,.18)}  
   .break-summary-grid span{display:block;color:var(--green);font-weight:800;font-size:16px;margin-top:4px}  
+  
+  /* --- Analytics Info Text (FIXED) --- */
+  .analytics-info p {
+    color: var(--text);
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .analytics-info span {
+    color: var(--text);
+    font-weight: 600;
+  }
 
-  body.light{background:#f5f7fb;color:#0f172a}  
-  body.light .stat-card,  
-  body.light #statsModal,  
-  body.light .goal-card,  
-  body.light .modal,  
-  body.light #historyPanel,  
-  body.light .menu-item{background:#ffffff;border-color:#e5e7eb}  
-  body.light #historyList li{background:#ffffff;border-color:#e5e7eb}  
-  body.light .field{background:#ffffff;border-color:#e5e7eb}  
-  body.light .goal-bar{background:#eef2ff;border-color:#c7d2fe}  
+  /* --- NEW: Light Mode Overrides --- */
+  body.light {
+    --bg: #f3f4f6;
+    --panel: #ffffff;
+    --panel-2: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    background: #e5e7eb;
+    color: var(--text);
+  }
+  body.light .rate-wrap { background: #e5e7eb; border-color: #d1d5db; }
+  body.light button { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
+  body.light button:active { filter: brightness(0.95); }
+  body.light #start { background: #22c55e; border-color: #16a34a; color: #ffffff; }
+  body.light #stop { background: #ef4444; border-color: #dc2626; color: #ffffff; }
+  body.light #clear { background: #9ca3af; border-color: #6b7280; color: #ffffff; }
+  body.light #historyBtn, body.light #statsBtn, body.light #menuBtn, body.light .header-icon-btn {
+    background: var(--panel); border-color: #d1d5db; color: var(--text); box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  }
+  body.light .hamburger svg path { stroke: var(--text); }
+  body.light #statsBtn path { stroke: var(--green); }
+  body.light .header-icon-btn svg { stroke: var(--text); }
 
-  #inboxBtn{  
-    position:fixed;top:20px;right:20px;  
-    background:linear-gradient(180deg,#17233f,#0f1a35);  
-    color:#fff;border:1px solid #2a3a64;border-radius:20px;  
-    padding:10px 14px;font-size:14px;cursor:pointer;  
-    display:inline-flex;align-items:center;gap:8px;  
-    transition:background .2s;z-index:35  
-  }  
-  #inboxBtn:hover{background:#1b2a52}  
-  #inboxBtn svg{width:18px;height:18px}  
+  body.light #menuPanel { background: #f9fafb; border-right-color: #d1d5db; }
+  body.light #menuHeader { background: #f3f4f6; border-bottom-color: #d1d5db; }
+  body.light .menu-item { background: var(--panel); border-color: #e5e7eb; color: var(--text); } /* FIXED */
+  body.light #settingsBtnFloat { background: #0ea5e9; border-color: #0284c7; color: #ffffff; } /* FIXED */
+  body.light #goalsPanel, body.light #calcPanel, body.light #heatmapPanel { background: #f3f4f6; }
+  body.light #goalsHeader, body.light #calcHeader, body.light #heatmapHeader { background: #ffffff; border-bottom-color: #e5e7eb; }
+  body.light .goal-card, body.light .calc-card { background: var(--panel); border-color: #e5e7eb; }
+  body.light input, body.light select, body.light textarea {
+    background: #f9fafb; border-color: #d1d5db; color: var(--text);
+  }
+  body.light input[type="number"] { color: var(--text); }
+  body.light .rate-wrap input[type="number"] { background: transparent; border: none; }
+  body.light .goal-bar { background: #e5e7eb; border-color: #d1d5db; }
+  body.light #predictionPanel { background: #f3f4f6; }
+  body.light #predictionHeader { background: #ffffff; border-bottom-color: #e5e7eb; }
+  body.light .pred-list-card { background: var(--panel); border-color: #e5e7eb; }
+  body.light #historyPanel { background: #f9fafb; border-top-color: #d1d5db; }
+  body.light #historyHeader { background: #ffffff; border-bottom-color: #e5e7eb; }
+  body.light .card { background: var(--panel); border-color: #e5e7eb; }
+  body.light #historyList li { background: var(--panel); border-color: #e5e7eb; }
+  body.light .backdrop { background: rgba(17, 24, 39, 0.6); }
+  body.light .modal { background: #ffffff; border-color: #e5e7eb; }
+  body.light .field { background: #f3f4f6; border-color: #e5e7eb; }
+  body.light .field input { background: transparent; border: none; color: var(--text); }
+  body.light .setting-row { background: #f9fafb; border-color: #e5e7eb; }
+  body.light #statsBackdrop { background: rgba(229, 231, 235, 0.75); }
+  body.light #statsModal { background: #f9fafb; border-color: #e5e7eb; }
+  body.light .stat-card { background: var(--panel); border-color: #e5e7eb; }
+  body.light canvas { background: #ffffff; border-color: #e5e7eb; }
+  body.light .break-section { background: var(--panel); border-color: #e5e7eb; }
+  body.light .break-summary-grid div { background: #f3f4f6; border-color: #e5e7eb; }
+  body.light #inboxBtn.has-new-message::after { border-color: var(--panel); }
+  body.light #inboxPanel { background: #f9fafb; border-left-color: #d1d5db; }
+  body.light #inboxHeader { background: #ffffff; border-bottom-color: #e5e7eb; }
+  body.light .inbox-empty { background: var(--panel); border-color: #e5e7eb; }
+  body.light .inbox-message { background: var(--panel); border-color: #e5e7eb; }
+  body.light #expensesPanel { background: #f9fafb; border-left-color: #d1d5db; }
+  body.light #expensesHeader { background: #ffffff; border-bottom-color: #e5e7eb; }
+  body.light .xp-form, body.light .xp-card, body.light .xp-list, body.light .xp-chart { background: var(--panel); border-color: #e5e7eb; }
+  body.light .xp-item { border-color: #e5e7eb; }
+  body.light #billForecastPanel { background: #f3f4f6; border-left-color: #d1d5db; }
+  body.light #billForecastHeader { background: #ffffff; border-bottom-color: #e5e7eb; }
+  body.light .bf-section, body.light .bf-card { background: var(--panel); border-color: #e5e7eb; }
+  
+  body.light .heatmap-month-nav { background: var(--panel); border-color: #e5e7eb; }
+  body.light .heatmap-month-nav button { background: #e5e7eb; border-color: #d1d5db; }
+  
+  body.light #heatmapGrid { background: transparent; border-color: transparent; }
+  body.light .heatmap-month { background: #ffffff; border-color: #e5e7eb; }
+  body.light .heatmap-day { background: #f3f4f6; border-color: #e5e7eb; color: var(--muted); }
+  body.light .heatmap-day.good { background: #dcfce7; border-color: #bbf7d0; color: #15803d; }
+  body.light .heatmap-day.bad { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  body.light .heatmap-day.neutral { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
+  
+  body.light .pred-status.good { color: #15803d; background: #dcfce7; border-color: #a7f3d0; }
+  body.light .pred-status.bad { color: #991b1b; background: #fee2e2; border-color: #fca5a5; }
+  body.light .pred-status.neutral { color: #6b7280; background: #f3f4f6; border-color: #e5e7eb; }
+  
+  body.light .btn-export-header { color: #ffffff; } /* FIXED */
+  body.light #settingsBtnFloat { color: #ffffff; } /* FIXED */
 
   #inboxPanel{  
     position:fixed;top:0;right:-75%;width:75%;max-width:420px;height:100%;  
@@ -441,8 +836,29 @@
   #inboxHeader h3{margin:0;font-size:18px}  
   #closeInbox{background:#64748b;border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}  
 
-  #inboxBody{flex:1;display:flex;align-items:center;justify-content:center;padding:16px}  
+  #inboxBody{flex:1;overflow:auto;padding:16px}  
   .inbox-empty{color:#94a3b8;font-size:15px;opacity:.9;text-align:center;background:linear-gradient(180deg,#0f172a,#0b1224);border:1px solid #2b3f6f;border-radius:12px;padding:14px 18px;box-shadow:0 12px 24px rgba(0,0,0,.28)}  
+
+  .inbox-message {
+    background: linear-gradient(180deg,#0f1a34,#0b1224);
+    border: 1px solid #2a3a64;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #e2e8f0;
+    margin-bottom: 10px;
+    box-shadow: 0 8px 18px rgba(0,0,0,.25);
+  }
+  .inbox-message .inbox-meta {
+    font-size: 11px;
+    color: var(--cyan);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+  .inbox-message.good .inbox-meta { color: var(--green); }
+  .inbox-message.bad .inbox-meta { color: var(--red); }
+  body.light .inbox-message { background: var(--panel); border-color: #e5e7eb; }
 
   #expensesPanel{  
     position:fixed;top:0;right:-75%;width:75%;max-width:520px;height:100%;  
@@ -469,8 +885,8 @@
     border:1px solid #2b3f6f;border-radius:12px;padding:12px  
   }  
   .xp-form .full{grid-column:1/-1}  
-  .xp-form label{font-size:12px;color:var(--muted)}  
-  .xp-form input,.xp-form select,.xp-form textarea{width:100%;background:#0b1224;border:1px solid #2b3f6f;border-radius:10px;padding:10px 12px;color:var(--text)}  
+  .xp-form label{font-size:12px;color:var(--muted); margin-bottom: 4px; display:block;}  
+  .xp-form input,.xp-form select,.xp-form textarea{width:100%;} /* removed redundant styles */
   .xp-form textarea{min-height:64px;resize:vertical}  
 
   .xp-actions{display:flex;gap:10px}  
@@ -529,10 +945,9 @@
   }  
   .bf-section h4{margin:0 0 6px;font-size:14px}  
   .bf-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}  
-  .bf-row label{font-size:12px;color:var(--muted)}  
+  .bf-row label{font-size:12px;color:var(--muted); display:flex; flex-direction:column; gap:4px; flex:1;}  
   .bf-row select,.bf-row input[type="number"]{  
-    background:#020617;border:1px solid #1f2937;border-radius:10px;  
-    padding:8px 10px;color:var(--text);font-size:13px;  
+    /* styles moved to global */
   }  
   .bf-toggle{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:6px}  
 
@@ -558,13 +973,102 @@
 </head>  
 <body>  
 
-<!-- 🔒 Invisible glass pane that intercepts clicks when overlays are open -->  
+<div id="introOverlay">
+  <div id="introTitle">Smart Hours</div>
+  <div id="introSubtitle">created by Dillan Swanepoel</div>
+</div>
+
+<div id="calcPanel" aria-hidden="true" role="dialog" aria-labelledby="calcTitle">  
+  <div id="calcHeader">  
+    <h3 id="calcTitle">Calculator</h3>  
+    <button id="calcClose">Back</button>  
+  </div>  
+  <div id="calcBody">  
+    <div class="calc-card">  
+      <h4>Earnings for Hours</h4>
+      <p class="calc-example">How much will I make if I work X hours?</p>
+      <div class="calc-field" style="margin-top:10px;">  
+        <label for="calcHours">Hours to Work</label>  
+        <input id="calcHours" type="number" step="0.1" min="0" placeholder="e.g. 8">  
+      </div>  
+      <div class="calc-field">  
+        <label for="calcRate1">Hourly Rate ($/hr)</label>  
+        <input id="calcRate1" type="number" step="0.01" min="0" placeholder="e.g. 25">  
+      </div>  
+      <div class="calc-result" id="calcResult1">Total: $0.00</div>  
+    </div>  
+    <div class="calc-card">  
+      <h4>Hours for Target</h4>
+      <p class="calc-example">How many hours must I work to make $X?</p>
+      <div class="calc-field" style="margin-top:10px;">  
+        <label for="calcTarget">Target Amount ($)</label>  
+        <input id="calcTarget" type="number" step="1" min="0" placeholder="e.g. 1000">  
+      </div>  
+      <div class="calc-field">  
+        <label for="calcRate2">Hourly Rate ($/hr)</label>  
+        <input id="calcRate2" type="number" step="0.01" min="0" placeholder="e.g. 25">  
+      </div>  
+      <div class="calc-result" id="calcResult2">Hours Needed: 0.00</div>  
+    </div>
+    <div class="calc-card">  
+      <h4>Time to Reach Goal</h4>
+      <p class="calc-example">How long to reach my goal at my current pace?</p>
+      <div class="calc-field" style="margin-top:10px;">  
+        <label for="calcGoalAmount">Goal Amount ($)</label>  
+        <input id="calcGoalAmount" type="number" step="1" min="0" placeholder="e.g. 5000">  
+      </div>  
+      <div class="calc-field">  
+        <label for="calcPace">Avg. Earnings per Day ($)</label>  
+        <input id="calcPace" type="number" step="0.01" min="0" placeholder="Uses your 7-day avg.">  
+      </div>  
+      <div class="calc-result" id="calcResult3">Days Needed: 0</div>  
+    </div>
+  </div>  
+</div>
+
+<div id="heatmapPanel" aria-hidden="true" role="dialog" aria-labelledby="heatmapTitle">  
+  <div id="heatmapHeader">  
+    <h3 id="heatmapTitle">Calendar Heatmap</h3>  
+    <button id="heatmapClose">Back</button>  
+  </div>  
+  <div id="heatmapBody">  
+    <div class="heatmap-month-nav">
+      <button id="heatmapPrev">‹</button>
+      <h4 id="heatmapMonthTitle">November 2025</h4>
+      <button id="heatmapNext">›</button>
+    </div>
+    <div class="heatmap-legend">
+      <div class="legend-box bad"></div> Low Day
+      <div class="legend-box neutral"></div> Avg Day
+      <div class="legend-box good"></div> Good Day
+    </div>
+    <div class="heatmap-grid-header">
+      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
+    <div id="heatmapGrid">
+      </div>
+  </div>  
+</div>
+
 <div id="globalBlocker" aria-hidden="true"></div>  
 
 <div class="top">  
   <span>Amount ($/hr):</span>  
   <div class="rate-wrap"><input id="rate" type="number" value="25" step="0.01" min="0"></div>  
 </div>  
+
+<div class="top-right-controls">
+  <button id="plusBtn" class="header-icon-btn" title="Coming Soon">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+  </button>
+  <button id="inboxBtn" class="header-icon-btn" aria-controls="inboxPanel" aria-expanded="false" title="Inbox">  
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+    </svg>
+  </button>
+</div>
 
 <div class="timer" id="timeDisplay">00:00:00.00</div>  
 <div class="amount" id="moneyDisplay">$0.00</div>  
@@ -607,13 +1111,6 @@
   Stats  
 </button>  
 
-<button id="inboxBtn" aria-controls="inboxPanel" aria-expanded="false" title="Inbox">  
-  <svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round">  
-    <path d="M4 5h16v14H4z"></path><path d="M22 6l-10 7L2 6"></path>  
-  </svg>  
-  Inbox  
-</button>  
-
 <div id="menuPanel" aria-hidden="true" role="dialog" aria-labelledby="menuTitle">  
   <div id="menuHeader">  
     <div class="title">  
@@ -625,15 +1122,17 @@
       <h3 id="menuTitle">Menu</h3>  
     </div>  
     <button id="closeMenu">Close</button>  
-  </div>  
-
-  <div id="menuContent">  
+  </div>
+<div id="menuContent">  
+    <div class="menu-item" id="menuDashboard"><span>Dashboard</span><span class="r">›</span></div>
     <div class="menu-item" id="menuGoals"><span>Goals</span><span class="r">›</span></div>  
     <div class="menu-item" id="menuSummary"><span>Summary</span><span class="r">›</span></div>  
     <div class="menu-item" id="menuCalc"><span>Calculator</span><span class="r">›</span></div>  
     <div class="menu-item" id="menuExpenses"><span>Expenses</span><span class="r">›</span></div>  
     <div class="menu-item" id="menuPrediction"><span>Predictions</span><span class="r">›</span></div>  
     <div class="menu-item" id="menuBillForecast"><span>Bill Forecast</span><span class="r">›</span></div>  
+    <div class="menu-item" id="menuHeatmap"><span>Calendar Heatmap</span><span class="r">›</span></div> 
+    <div class="menu-item" id="menuWorkMap"><span>Work Map</span><span class="r">›</span></div> 
   </div>  
 
   <button id="settingsBtnFloat" aria-controls="settingsBackdrop">Settings</button>  
@@ -668,53 +1167,66 @@
   </div>  
 </div>  
 
-<!-- 🔮 Prediction Panel (auto projections vs goals) -->  
 <div id="predictionPanel" aria-hidden="true" role="dialog" aria-labelledby="predictionTitle">  
   <div id="predictionHeader">  
     <h3 id="predictionTitle">Predictions</h3>  
     <button id="predictionClose">Back</button>  
   </div>  
   <div id="predictionBody">  
-    <p class="pred-subtitle">Based on your recent earnings and your goals, here’s what you’re on track to make:</p>  
-
-    <div class="pred-grid">  
-      <div class="pred-card">  
-        <div class="pred-label">Daily</div>  
-        <div class="pred-value" id="predDailyValue">$0.00</div>  
-        <div class="pred-goal" id="predDailyGoal">Goal: —</div>  
-        <div class="pred-status neutral" id="predDailyStatus">No goal set</div>  
-      </div>  
-
-      <div class="pred-card">  
-        <div class="pred-label">Weekly</div>  
-        <div class="pred-value" id="predWeeklyValue">$0.00</div>  
-        <div class="pred-goal" id="predWeeklyGoal">Goal: —</div>  
-        <div class="pred-status neutral" id="predWeeklyStatus">No goal set</div>  
-      </div>  
-
-      <div class="pred-card">  
-        <div class="pred-label">Bi-Weekly</div>  
-        <div class="pred-value" id="predBiWeeklyValue">$0.00</div>  
-        <div class="pred-goal" id="predBiWeeklyGoal">Goal: —</div>  
-        <div class="pred-status neutral" id="predBiWeeklyStatus">No goal set</div>  
-      </div>  
-
-      <div class="pred-card">  
-        <div class="pred-label">Monthly</div>  
-        <div class="pred-value" id="predMonthlyValue">$0.00</div>  
-        <div class="pred-goal" id="predMonthlyGoal">Goal: —</div>  
-        <div class="pred-status neutral" id="predMonthlyStatus">No goal set</div>  
-      </div>  
-
-      <div class="pred-card">  
-        <div class="pred-label">Yearly</div>  
-        <div class="pred-value" id="predYearlyValue">$0.00</div>  
-        <div class="pred-goal" id="predYearlyGoal">Goal: —</div>  
-        <div class="pred-status neutral" id="predYearlyStatus">No goal set</div>  
-      </div>  
-    </div>  
-
-    <p class="pred-note">Green = on or above target. Red = behind target at your current pace.</p>  
+    
+    <div class="pred-list-card">
+      <div class="pred-list-top">
+        <div class="pred-list-title">This Week</div>
+        <div class="pred-list-dates" id="predWeeklyDates">Nov 10 – Nov 16</div>
+      </div>
+      <div class="pred-list-value" id="predWeeklyValue">$0.00</div>
+      <div class="pred-list-goal" id="predWeeklyGoal">Goal: $0.00</div>
+      <div class="pred-list-prev" id="predWeeklyPrev">Previous Week: $0.00</div>
+    </div>
+    
+    <div class="pred-list-card">
+      <div class="pred-list-top">
+        <div class="pred-list-title">This Bi-Weekly</div>
+        <div class="pred-list-dates" id="predBiWeeklyDates">Nov 2 – Nov 15</div>
+      </div>
+      <div class="pred-list-value" id="predBiWeeklyValue">$0.00</div>
+      <div class="pred-list-goal" id="predBiWeeklyGoal">Goal: $0.00</div>
+      <div class="pred-list-prev" id="predBiWeeklyPrev">Previous Period: $0.00</div>
+    </div>
+    
+    <div class="pred-list-card">
+      <div class="pred-list-top">
+        <div class="pred-list-title">This Month</div>
+        <div class="pred-list-dates" id="predMonthlyDates">Nov 1 – Nov 30</div>
+      </div>
+      <div class="pred-list-value" id="predMonthlyValue">$0.00</div>
+      <div class="pred-list-goal" id="predMonthlyGoal">Goal: $0.00</div>
+      <div class="pred-list-prev" id="predMonthlyPrev">Previous Month: $0.00</div>
+    </div>
+    
+    <div class="pred-list-card">
+      <div class="pred-list-top">
+        <div class="pred-list-title">This Year</div>
+        <div class="pred-list-dates" id="predYearlyDates">Jan 1 – Dec 31, 2025</div>
+      </div>
+      <div class="pred-list-value" id="predYearlyValue">$0.00</div>
+      <div class="pred-list-goal" id="predYearlyGoal">Goal: $0.00</div>
+      <div class="pred-list-prev" id="predYearlyPrev">Previous Year: $0.00</div>
+    </div>
+    
+    <div class="pred-list-card payday">
+      <div class="pred-list-top">
+        <div class="pred-list-title">Next Payday</div>
+        <div class="pred-list-dates" id="predPaydayDates">Nov 1 – Nov 15</div>
+      </div>
+      <div class="pred-list-value" id="predPaydayValue">$0.00</div>
+      <div class="pred-pay-inputs">
+        <label>Day 1 <input type="number" id="payday1" min="1" max="31" step="1" placeholder="1"></label>
+        <label>Day 2 <input type="number" id="payday2" min="1" max="31" step="1" placeholder="15"></label>
+      </div>
+      <div class="pred-pay-hint">Predictions reset after each payday.</div>
+    </div>
+    
   </div>  
 </div>  
 
@@ -726,7 +1238,10 @@
       </svg>  
       <h3>History</h3>  
     </div>  
-    <button id="closeHistory">Close</button>  
+    <div style="display:flex; gap: 8px;">
+      <button id="exportBtn" class="btn-export-header">Export</button>
+      <button id="closeHistory">Close</button>
+    </div>
   </div>  
   <div id="totals">  
     <div class="card"><div class="k">This week</div><div class="v" id="weekTotal">$0.00</div></div>  
@@ -736,8 +1251,23 @@
 </div>  
 
 <div id="inboxPanel" aria-hidden="true" role="dialog" aria-labelledby="inboxTitle">  
-  <div id="inboxHeader"><h3 id="inboxTitle">Inbox</h3><button id="closeInbox">Close</button></div>  
-  <div id="inboxBody"><div class="inbox-empty">no messages</div></div>  
+  <div id="inboxHeader"><h3 id="inboxTitle">What's New</h3><button id="closeInbox">Close</button></div>  
+  <div id="inboxBody">
+    
+    <div class="inbox-message good">
+      <div class="inbox-meta">Update: Pro UI & Features</div>
+      <div>This update adds major features and fixes!
+        <ul style="margin: 8px 0 0 20px; padding: 0; list-style-type: disc;">
+          <li><b>Prediction Overhaul:</b> This panel now tracks your *current* earnings for each period (Week, Month, etc.) and shows your previous period's total.</li>
+          <li><b>Calendar Heatmap:</b> A new "one-month-at-a-time" view to spot earning patterns.</li>
+          <li><b>Light Mode Fixed:</b> The light theme is now clean and fully usable.</li>
+          <li><b>Pro Alerts:</b> "Coming Soon" alerts are now cleaner and match the UI.</li>
+          <li><b>Export Fixed:</b> CSV export no longer crashes the app.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>  
 </div>  
 
 <div id="expensesPanel" aria-hidden="true" role="dialog" aria-labelledby="expensesTitle">  
@@ -773,7 +1303,6 @@
   </div>  
 </div>  
 
-<!-- 💸 Bill Forecast Panel (new) -->  
 <div id="billForecastPanel" aria-hidden="true" role="dialog" aria-labelledby="billForecastTitle">  
   <div id="billForecastHeader">  
     <h3 id="billForecastTitle">Bill Forecast</h3>  
@@ -786,8 +1315,9 @@
         <label>Period  
           <select id="bfPeriod">  
             <option value="month">This month</option>  
-            <option value="week">This week</option>  
-            <option value="30d">Next 30 days</option>  
+            <option value="week">This week</option>
+            <option value="biweek">Next 2 weeks</option>
+            <option value="year">This year</option>  
           </select>  
         </label>  
         <label>Extra fixed bills  
@@ -816,7 +1346,7 @@
         </div>  
         <div class="bf-card">  
           <div class="k">Left after bills</div>  
-          <div class="v bf-left" id="bfLeft">$0.00</div>  
+          <div class="v" bf-left" id="bfLeft">$0.00</div>  
         </div>  
       </div>  
       <ul id="bfHints"></ul>  
@@ -846,16 +1376,25 @@
   <div class="modal"><h3 id="confirmTitle">Delete this entry?</h3><div class="actions"><button id="confirmNo">No</button><button id="confirmYes">Yes</button></div></div>  
 </div>  
 
+<div id="alertBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="alertTitle">  
+  <div class="modal">
+    <h3 id="alertTitle" style="color: var(--cyan);">Feature Coming Soon</h3>
+    <p id="alertMessage" style="text-align: center; color: var(--muted); margin: 10px 0;">This feature is currently in development.</p>
+    <div class="actions" style="margin-top: 14px;">
+      <button id="alertClose" style="background:#22c55e; flex: 1;">OK</button>
+    </div>
+  </div>  
+</div>
+
 <div id="settingsBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">  
   <div class="modal">  
     <h3 id="settingsTitle">Settings</h3>  
-    <div class="setting-row"><div>Theme</div><div class="field" style="margin:0;"><select id="themeSelect" aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select></div></div>  
+    <div class="setting-row"><div>Theme</div><div class="field"><select id="themeSelect" aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select></div></div>  
     <div class="setting-row"><div>Sound</div><label class="switch"><input type="checkbox" id="soundToggle"><span class="slider"></span></label></div>  
     <div class="setting-row"><div>Haptic feedback</div><label class="switch"><input type="checkbox" id="hapticsToggle"><span class="slider"></span></label></div>  
     <div class="actions" style="margin-top:16px;"><button id="settingsClose" style="background:#6b7280;">Close</button><button id="settingsSave" style="background:#22c55e;">Save</button></div>  
   </div>  
 </div>
-<!-- PART 2 -->
 <div id="startAtBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="startAtTitle">  
   <div class="modal">  
     <h3 id="startAtTitle">Start At</h3>  
@@ -886,10 +1425,30 @@
 
 <div id="exportBackdrop" class="backdrop" role="dialog" aria-modal="true" aria-labelledby="exportTitle">  
   <div class="modal">
-    <h3 id="exportTitle">Export</h3>
-    <p style="text-align:center;margin:8px 0 0;">Coming soon.</p>
-    <div class="actions" style="margin-top:12px;">
-      <button id="exportClose" style="background:#22c55e;">OK</button>
+    <h3 id="exportTitle">Export Data</h3>
+    <div class="setting-row" style="margin-top: 10px;">
+      <div style="font-size: 14px;">Data</div>
+      <div class="field" style="margin: 0; padding: 0;">
+        <select id="exportDataType">
+          <option value="history">Earnings History</option>
+          <option value="expenses" disabled>Expenses (Coming Soon)</option>
+        </select>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div style="font-size: 14px;">Format</div>
+      <div class="field" style="margin: 0; padding: 0;">
+        <select id="exportFormat">
+          <option value="csv">CSV (for Excel, Sheets)</option>
+        </select>
+      </div>
+    </div>
+    <p style="font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px;">
+      A file will be downloaded to your device.
+    </p>
+    <div class="actions" style="margin-top: 14px;">
+      <button id="exportCancel" style="background:#6b7280;">Cancel</button>
+      <button id="exportDownload" style="background:#22c55e;">Download</button>
     </div>
   </div>  
 </div>  
@@ -919,11 +1478,10 @@
     <canvas id="earningsChart" height="170"></canvas>  
     <canvas id="hoursChart" height="170"></canvas>  
 
-    <!-- Tag Effectiveness donut (7d) -->  
     <div class="break-section">  
       <p class="break-title">Tag Effectiveness (7d)</p>  
       <canvas id="breakChart" height="200"></canvas>  
-      <div class="break-summary" style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">  
+      <div class="break-summary-grid" style="margin-top:12px;text-align:center;">  
         <div>Top Tag<span id="topTag" style="display:block;margin-top:4px;">—</span></div>  
         <div>Unique Tags<span id="tagCount" style="display:block;margin-top:4px;">0</span></div>  
         <div>Top Share<span id="topShare" style="display:block;margin-top:4px;">0%</span></div>  
@@ -936,8 +1494,7 @@
       <p>Trend insight: <span id="trend">Stable</span></p>  
     </div>  
   </div>  
-</div>  
-
+</div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>  
 
 <script>  
@@ -957,8 +1514,12 @@
   let breakTicker = null;  
   let sessionBreakMs = 0;  
 
-  let prefs = { theme:'dark', sound:true, haptics:true };  
+  let prefs = { theme:'dark', sound:true, haptics:true, payday1: 1, payday2: 15 };  
   let goals = { yearly:0, monthly:0, weekly:0, daily:0 };  
+  
+  let heatmapState = {
+    currentDate: new Date() // NEW: For heatmap navigation
+  };
 
   let expenses = [];  
   let budgets = {  
@@ -968,12 +1529,14 @@
     'Travel': 0, 'Other': 100  
   };  
 
-const STORE_KEY_STATE     = 'earningsTimer_state_v7';  
+  /* VITAL: Do not change these keys. This ensures user data is preserved. */
+  const STORE_KEY_STATE     = 'earningsTimer_state_v7';  
   const STORE_KEY_HISTORY   = 'earningsTimer_history_v2';  
   const STORE_KEY_PREFS     = 'earningsTimer_prefs_v1';  
   const STORE_KEY_GOALS     = 'earningsTimer_goals_v1';  
   const STORE_KEY_EXPENSES  = 'earningsTimer_expenses_v1';  
   const STORE_KEY_BUDGETS   = 'earningsTimer_budgets_v1';  
+  const STORE_KEY_UPDATE_SEEN = 'earningsTimer_update_v35_seen'; // NEW: For update notification
 
   /* ========= Elements ========= */  
   const timeDisplay   = document.getElementById('timeDisplay');  
@@ -997,6 +1560,7 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
   const historyList  = document.getElementById('historyList');  
   const weekTotalEl  = document.getElementById('weekTotal');  
   const monthTotalEl = document.getElementById('monthTotal');  
+  const exportBtn    = document.getElementById('exportBtn'); // NEW
 
   const saveBackdrop  = document.getElementById('saveBackdrop');  
   const discardBtn    = document.getElementById('discardBtn');  
@@ -1013,18 +1577,44 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
   const confirmBackdrop = document.getElementById('confirmBackdrop');  
   const confirmYes = document.getElementById('confirmYes');  
   const confirmNo  = document.getElementById('confirmNo');  
+  
+  const alertBackdrop = document.getElementById('alertBackdrop');
+  const alertClose = document.getElementById('alertClose');
 
   const menuBtn = document.getElementById('menuBtn');  
   const menuPanel = document.getElementById('menuPanel');  
   const closeMenu = document.getElementById('closeMenu');  
   const settingsBtnFloat = document.getElementById('settingsBtnFloat');  
-
+  
+  const menuDashboard    = document.getElementById('menuDashboard');
   const menuGoals        = document.getElementById('menuGoals');  
   const menuSummary      = document.getElementById('menuSummary');  
   const menuCalc         = document.getElementById('menuCalc');  
   const menuExpenses     = document.getElementById('menuExpenses');  
   const menuPrediction   = document.getElementById('menuPrediction');  
   const menuBillForecast = document.getElementById('menuBillForecast');  
+  const menuHeatmap      = document.getElementById('menuHeatmap'); 
+  const menuWorkMap      = document.getElementById('menuWorkMap'); 
+
+  const calcPanel = document.getElementById('calcPanel');
+  const calcClose = document.getElementById('calcClose');
+  const calcHours = document.getElementById('calcHours');
+  const calcRate1 = document.getElementById('calcRate1');
+  const calcResult1 = document.getElementById('calcResult1');
+  const calcTarget = document.getElementById('calcTarget');
+  const calcRate2 = document.getElementById('calcRate2');
+  const calcResult2 = document.getElementById('calcResult2');
+  const calcGoalAmount = document.getElementById('calcGoalAmount');
+  const calcPace = document.getElementById('calcPace');
+  const calcResult3 = document.getElementById('calcResult3');
+  
+  // NEW Heatmap Elements
+  const heatmapPanel = document.getElementById('heatmapPanel');
+  const heatmapClose = document.getElementById('heatmapClose');
+  const heatmapGrid  = document.getElementById('heatmapGrid');
+  const heatmapMonthTitle = document.getElementById('heatmapMonthTitle');
+  const heatmapPrev = document.getElementById('heatmapPrev');
+  const heatmapNext = document.getElementById('heatmapNext');
 
   const settingsBackdrop = document.getElementById('settingsBackdrop');  
   const settingsClose = document.getElementById('settingsClose');  
@@ -1044,7 +1634,8 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
   const stopAtSave     = document.getElementById('stopAtSave');  
 
   const exportBackdrop = document.getElementById('exportBackdrop');  
-  const exportClose = document.getElementById('exportClose');  
+  const exportCancel = document.getElementById('exportCancel');
+  const exportDownload = document.getElementById('exportDownload');
 
   const goalsPanel   = document.getElementById('goalsPanel');  
   const goalsClose   = document.getElementById('goalsClose');  
@@ -1074,10 +1665,15 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
   const avgRateEl = document.getElementById('avgRate');  
   const avgDayEl = document.getElementById('avgDay');  
   const trendEl = document.getElementById('trend');  
+  const topTag = document.getElementById('topTag'); // ADDED
+  const tagCount = document.getElementById('tagCount'); // ADDED
+  const topShare = document.getElementById('topShare'); // ADDED
 
   const inboxBtn = document.getElementById('inboxBtn');  
+  const plusBtn = document.getElementById('plusBtn');
   const inboxPanel = document.getElementById('inboxPanel');  
   const closeInbox = document.getElementById('closeInbox');  
+  const inboxBody = document.getElementById('inboxBody');
 
   const expensesPanel = document.getElementById('expensesPanel');  
   const closeExpenses = document.getElementById('closeExpenses');  
@@ -1100,26 +1696,31 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
 
   const predictionPanel = document.getElementById('predictionPanel');  
   const predictionClose = document.getElementById('predictionClose');  
-
-  const predDailyValue  = document.getElementById('predDailyValue');  
-  const predDailyGoal   = document.getElementById('predDailyGoal');  
-  const predDailyStatus = document.getElementById('predDailyStatus');  
+  
+  const payday1Input = document.getElementById('payday1');
+  const payday2Input = document.getElementById('payday2');
+  const predPaydayValue = document.getElementById('predPaydayValue');
+  const predPaydayDates = document.getElementById('predPaydayDates');
 
   const predWeeklyValue  = document.getElementById('predWeeklyValue');  
   const predWeeklyGoal   = document.getElementById('predWeeklyGoal');  
-  const predWeeklyStatus = document.getElementById('predWeeklyStatus');  
+  const predWeeklyPrev   = document.getElementById('predWeeklyPrev');  
+  const predWeeklyDates = document.getElementById('predWeeklyDates');
 
   const predBiWeeklyValue  = document.getElementById('predBiWeeklyValue');  
   const predBiWeeklyGoal   = document.getElementById('predBiWeeklyGoal');  
-  const predBiWeeklyStatus = document.getElementById('predBiWeeklyStatus');  
+  const predBiWeeklyPrev   = document.getElementById('predBiWeeklyPrev');  
+  const predBiWeeklyDates = document.getElementById('predBiWeeklyDates');
 
   const predMonthlyValue  = document.getElementById('predMonthlyValue');  
   const predMonthlyGoal   = document.getElementById('predMonthlyGoal');  
-  const predMonthlyStatus = document.getElementById('predMonthlyStatus');  
+  const predMonthlyPrev   = document.getElementById('predMonthlyPrev');  
+  const predMonthlyDates = document.getElementById('predMonthlyDates');
 
   const predYearlyValue  = document.getElementById('predYearlyValue');  
   const predYearlyGoal   = document.getElementById('predYearlyGoal');  
-  const predYearlyStatus = document.getElementById('predYearlyStatus');  
+  const predYearlyPrev   = document.getElementById('predYearlyPrev');  
+  const predYearlyDates = document.getElementById('predYearlyDates');
 
   const billForecastPanel  = document.getElementById('billForecastPanel');  
   const billForecastClose  = document.getElementById('billForecastClose');  
@@ -1132,6 +1733,7 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
   const bfHints            = document.getElementById('bfHints');  
 
   const blocker = document.getElementById('globalBlocker');  
+  const introOverlay = document.getElementById('introOverlay');
 
   let earningsChart = null;  
   let hoursChart = null;  
@@ -1145,6 +1747,13 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
   function fmtMoney(n){  
     return `$${(n||0).toFixed(2)}`;  
   }  
+  
+  function fmtMoneyShort(n) {
+    if (n >= 1000) {
+      return `$${(n/1000).toFixed(1)}K`; // Use 1 decimal for short
+    }
+    return fmtMoney(n);
+  }
 
   function formatMain(ms){  
     const total = Math.max(0, ms|0);  
@@ -1164,10 +1773,20 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
   function fromLocalInput(val){  
     return new Date(val.replace(' ', 'T')).getTime();  
   }  
-
+  
+  /* Date helpers */
+  const fmtDate = (d, exclYear=false) => {
+    const opts = { month: 'short', day: 'numeric' };
+    if (!exclYear) opts.year = 'numeric';
+    return new Date(d).toLocaleDateString('en-US', opts);
+  };
+  
+  const dayMS = 86400000;
   const startOfDay   = ts => { const d = new Date(ts); d.setHours(0,0,0,0); return d.getTime(); };  
   const startOfWeek  = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x.getTime(); };  
   const startOfMonth = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), d.getMonth(), 1); x.setHours(0,0,0,0); return x.getTime(); };  
+  const startOfYear  = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), 0, 1); x.setHours(0,0,0,0); return x.getTime(); };
+  const endOfYear    = ts => { const d=new Date(ts); const x=new Date(d.getFullYear(), 11, 31); x.setHours(23,59,59,999); return x.getTime(); };
 
   function humanDate(ts){  
     const d=new Date(ts);  
@@ -1179,7 +1798,7 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
     const now=new Date();  
     now.setHours(0,0,0,0);  
     for(let i=n-1;i>=0;i--){  
-      arr.push(+now - i*86400000);  
+      arr.push(+now - i*dayMS);  
     }  
     return arr;  
   }  
@@ -1214,9 +1833,8 @@ const STORE_KEY_STATE     = 'earningsTimer_state_v7';
   /* ========= Persistence ========= */  
   function savePrefs(){  
     try{ localStorage.setItem(STORE_KEY_PREFS, JSON.stringify(prefs)); }catch{}  
-  }  
-
-function loadPrefs(){  
+  }
+  function loadPrefs(){  
     try{  
       const raw = localStorage.getItem(STORE_KEY_PREFS);  
       if (!raw) return;  
@@ -1224,6 +1842,8 @@ function loadPrefs(){
       prefs.theme = obj.theme === 'light' ? 'light' : 'dark';  
       prefs.sound = obj.sound !== false;  
       prefs.haptics = obj.haptics !== false;  
+      prefs.payday1 = obj.payday1 || 1;
+      prefs.payday2 = obj.payday2 || 15;
     }catch{}  
   }  
 
@@ -1243,8 +1863,21 @@ function loadPrefs(){
     }catch{}  
   }  
 
+  /* --- NEW: Chart Defaults --- */
+  function updateChartDefaults() {
+    const isLight = prefs.theme === 'light';
+    const tickColor = isLight ? '#6b7280' : '#94a3b8'; // --muted
+    const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(148, 163, 184, 0.2)';
+    const legendColor = isLight ? '#111827' : '#f8fafc'; // --text
+    
+    Chart.defaults.color = tickColor;
+    Chart.defaults.borderColor = gridColor;
+    Chart.defaults.plugins.legend.labels.color = legendColor;
+  }
+  
   function applyTheme(){  
-    document.body.classList.toggle('light', prefs.theme === 'light');  
+    document.body.classList.toggle('light', prefs.theme === 'light');
+    updateChartDefaults(); // Update chart colors on theme change
   }  
 
   function saveHistoryStore(){  
@@ -1300,6 +1933,7 @@ function loadPrefs(){
   function sumEntriesBetween(startMs, endMs){  
     let ms=0, amount=0, sessions=0, breakMs=0;  
     for (const h of history){  
+      // Only count entries that *ended* within the period
       if (h.endTs >= startMs && h.endTs < endMs){  
         ms += h.elapsedMs||0;  
         amount += h.amount||0;  
@@ -1309,17 +1943,26 @@ function loadPrefs(){
     }  
     return {ms, amount, sessions, breakMs};  
   }  
-
-  function sumRangeSince(rangeStart){  
+  
+  function sumRangeSince(rangeStart, rangeEnd = Date.now()){  
     const rate = parseFloat(rateInput.value)||0;  
-    const now = Date.now();  
-    let total = history.filter(h=>h.endTs>=rangeStart).reduce((a,b)=>a+(b.amount||0),0);  
-    if (running && !onBreak && startWallTs){  
-      const contribMs = Math.max(0, now - Math.max(startWallTs, rangeStart));  
-      total += rate * (contribMs/3600000);  
+    const now = Math.min(Date.now(), rangeEnd);
+    
+    // Sum all *saved* history that ended in this range
+    let total = history
+      .filter(h => h.endTs >= rangeStart && h.endTs < rangeEnd)
+      .reduce((a,b) => a + (b.amount||0), 0);  
+    
+    // Add *live* contribution if the session is running
+    if (running && !onBreak && startWallTs && now < rangeEnd){  
+      const contribStart = Math.max(startWallTs, rangeStart);
+      if (now > contribStart) {
+        const contribMs = Math.max(0, now - contribStart);  
+        total += rate * (contribMs/3600000);  
+      }
     }  
     return total;  
-  }  
+  }
 
   function update(){  
     const now = Date.now();  
@@ -1447,8 +2090,8 @@ function loadPrefs(){
     const now = Date.now();  
     const w0 = startOfWeek(now);  
     const m0 = startOfMonth(now);  
-    const weekSum = history.filter(h=>h.endTs>=w0).reduce((a,b)=>a+(b.amount||0),0);  
-    const monthSum = history.filter(h=>h.endTs>=m0).reduce((a,b)=>a+(b.amount||0),0);  
+    const weekSum = sumRangeSince(w0);
+    const monthSum = sumRangeSince(m0);
     weekTotalEl.textContent = fmtMoney(weekSum);  
     monthTotalEl.textContent = fmtMoney(monthSum);  
     computePredictions();  
@@ -1466,7 +2109,7 @@ function loadPrefs(){
 
   function renderHistory(){  
     historyList.innerHTML = "";  
-    history.forEach(item=>{  
+    history.sort((a,b) => b.startTs - a.startTs).forEach(item=>{  
       const startStr = new Date(item.startTs).toLocaleString();  
       const endStr = new Date(item.endTs).toLocaleString();  
       const li = document.createElement('li');  
@@ -1479,9 +2122,8 @@ function loadPrefs(){
           ${item.tag ? `<div class="tag">#${item.tag}</div>` : ''}  
         </div>  
         <div class="row-actions">  
-          <button class="btn-small btn-danger" data-del="${item.id}">Delete</button>  
+          <button class="btn-small btn-danger" data-del="${item.id}">Delete</button>
           <button class="btn-small" data-edit="${item.id}">Edit</button>  
-          <button class="btn-small btn-export" data-export="${item.id}">Export</button>  
         </div>  
       `;  
       historyList.appendChild(li);  
@@ -1494,7 +2136,7 @@ function loadPrefs(){
       };  
     }); 
 
-historyList.querySelectorAll('[data-edit]').forEach(btn=>{  
+    historyList.querySelectorAll('[data-edit]').forEach(btn=>{  
       btn.onclick = ()=>{  
         const id = btn.getAttribute('data-edit');  
         const entry = history.find(h=>String(h.id)===String(id));  
@@ -1507,10 +2149,6 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
       };  
     });  
 
-    historyList.querySelectorAll('[data-export]').forEach(btn=>{  
-      btn.onclick = ()=>{ exportBackdrop.classList.add('show'); };  
-    });  
-
     computePredictions();  
   }  
 
@@ -1518,7 +2156,9 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
     const rate = parseFloat(rateInput.value)||0;  
     if (!startWallTs) startWallTs = Date.now() - elapsed;  
     if (!endWallTs) endWallTs = Date.now();  
-    const durationMs = Math.max(0, endWallTs - startWallTs);  
+    
+    // Use elapsed, not a new wall-clock calc, to respect manual start/stop times
+    const durationMs = elapsed; 
 
     if (durationMs > 0){  
       const now = new Date(endWallTs);  
@@ -1604,6 +2244,67 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
     }, 250);  
   }  
 
+  /* ===== Calculator (NEW) ===== */
+  function openCalc() {
+    calcRate1.value = rateInput.value;
+    calcRate2.value = rateInput.value;
+    calcHours.value = '';
+    calcTarget.value = '';
+    calcGoalAmount.value = '';
+    
+    const avgDay = estimateDailyPace();
+    calcPace.placeholder = `Uses your 7-day avg. (${fmtMoney(avgDay)})`;
+    calcPace.value = ''; // Clear it so placeholder shows
+
+    updateCalc1();
+    updateCalc2();
+    updateCalc3();
+    
+    calcPanel.classList.add('show');
+    calcPanel.setAttribute('aria-hidden', 'false');
+    syncOverlays();
+  }
+  
+  function closeCalc() {
+    calcPanel.classList.remove('show');
+    calcPanel.setAttribute('aria-hidden', 'true');
+    syncOverlays();
+  }
+
+  function updateCalc1() {
+    const hours = parseFloat(calcHours.value) || 0;
+    const rate = parseFloat(calcRate1.value) || 0;
+    calcResult1.textContent = `Total: ${fmtMoney(hours * rate)}`;
+  }
+
+  function updateCalc2() {
+    const target = parseFloat(calcTarget.value) || 0;
+    const rate = parseFloat(calcRate2.value) || 0;
+    const hours = (rate > 0) ? (target / rate) : 0;
+    calcResult2.textContent = `Hours Needed: ${hours.toFixed(2)}`;
+  }
+  
+  function updateCalc3() {
+    const goal = parseFloat(calcGoalAmount.value) || 0;
+    let pace = parseFloat(calcPace.value) || 0;
+    
+    if (pace === 0) {
+      pace = estimateDailyPace(); // Use placeholder if input is empty
+    }
+    
+    const days = (pace > 0) ? (goal / pace) : 0;
+    calcResult3.textContent = `Days Needed: ${days.toFixed(1)}`;
+  }
+
+  calcClose.onclick = closeCalc;
+  calcHours.oninput = updateCalc1;
+  calcRate1.oninput = updateCalc1;
+  calcTarget.oninput = updateCalc2;
+  calcRate2.oninput = updateCalc2;
+  calcGoalAmount.oninput = updateCalc3;
+  calcPace.oninput = updateCalc3;
+
+
   /* ===== Goals open/close + SAVE ===== */  
   let goalsRAF = null;  
 
@@ -1638,21 +2339,10 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
 
   function renderGoalBars(){  
     const now = Date.now();  
-    const year0  = (new Date(new Date(now).getFullYear(),0,1)).getTime();  
-    const month0 = (new Date(new Date(now).getFullYear(),new Date(now).getMonth(),1)).getTime();  
-    const week0  = (function(){  
-      const d=new Date(now);  
-      const x=new Date(d.getFullYear(), d.getMonth(), d.getDate());  
-      const dow=x.getDay();  
-      x.setDate(x.getDate()-dow);  
-      x.setHours(0,0,0,0);  
-      return +x;  
-    })();  
-    const day0   = (function(d){  
-      d=new Date(now);  
-      d.setHours(0,0,0,0);  
-      return +d;  
-    })();  
+    const year0  = startOfYear(now);
+    const month0 = startOfMonth(now);
+    const week0  = startOfWeek(now);
+    const day0   = startOfDay(now);
 
     const yVal = sumRangeSince(year0);  
     const mVal = sumRangeSince(month0);  
@@ -1700,7 +2390,8 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
       ctx.save();  
       chart.data.datasets.forEach((ds, i)=>{  
         const meta = chart.getDatasetMeta(i);  
-        if (!meta.data) return;  
+        if (!meta.data || prefs.theme === 'light') return; // No glow on light mode
+        
         ctx.shadowColor = (ds.borderColor || 'rgba(255,255,255,.5)');  
         ctx.shadowBlur = 16;  
         ctx.shadowOffsetX=0;  
@@ -1750,42 +2441,26 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
 
   function renderStats(){  
     const now = Date.now();  
-    const d0 = (d=>{d=new Date(now); d.setHours(0,0,0,0); return +d;})();  
-    const w0 = (function(){  
-      const d=new Date(now);  
-      const x=new Date(d.getFullYear(), d.getMonth(), d.getDate());  
-      const dow=x.getDay();  
-      x.setDate(x.getDate()-dow);  
-      x.setHours(0,0,0,0);  
-      return +x;  
-    })();  
-    const m0 = (d=>{d=new Date(now); d.setDate(1); d.setHours(0,0,0,0); return +d;})();  
+    const d0 = startOfDay(now);
+    const w0 = startOfWeek(now);
+    const m0 = startOfMonth(now);
 
-    const todayFixed = sumEntriesBetween(d0, d0+86400000);  
-    const todayLive = currentSessionContributionSince(d0);  
-    const todayAmount = todayFixed.amount + todayLive.amount;  
-
-    const weekFixed = sumEntriesBetween(w0, w0 + 7*86400000);  
-    const weekLive = currentSessionContributionSince(w0);  
-    const weekAmount = weekFixed.amount + weekLive.amount;  
-
-    const mEnd = new Date(new Date(m0).getFullYear(), new Date(m0).getMonth()+1, 1).getTime();  
-    const monthFixed = sumEntriesBetween(m0, mEnd);  
-    const monthLive = currentSessionContributionSince(m0);  
-    const monthAmount = monthFixed.amount + monthLive.amount;  
-
+    const todayAmount = sumRangeSince(d0);
+    const weekAmount = sumRangeSince(w0);
+    const monthAmount = sumRangeSince(m0);
+    
     todayEarned.textContent = fmtMoney(todayAmount);  
     weekEarned.textContent  = fmtMoney(weekAmount);  
     monthEarned.textContent = fmtMoney(monthAmount);  
 
     const last7 = rangeDays(7);  
     const earningsSeries = last7.map(d=>{  
-      const fx = sumEntriesBetween(d, d+86400000);  
+      const fx = sumEntriesBetween(d, d+dayMS);  
       const live = (d===d0) ? currentSessionContributionSince(d) : {amount:0,ms:0};  
       return +(fx.amount + live.amount).toFixed(2);  
     });  
     const hoursSeries = last7.map(d=>{  
-      const fx = sumEntriesBetween(d, d+86400000);  
+      const fx = sumEntriesBetween(d, d+dayMS);  
       const live = (d===d0) ? currentSessionContributionSince(d) : {amount:0, ms:0};  
       return +(((fx.ms + live.ms)/3600000).toFixed(2));  
     });  
@@ -1810,19 +2485,28 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
     const tagEntries = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);  
     const labels = tagEntries.map(([k])=>k);  
     const data   = tagEntries.map(([,v])=>+v.toFixed(2));  
-    const colors = labels.map((t,i)=>colorForTag(t,i));  
-
+    const colors = [
+      '#22d3ee', '#a78bfa', '#f59e0b', '#22c55e',
+      '#ef4444', '#60a5fa', '#eab308', '#ec4899'
+    ]; // NEW Donut Palette
+    
     const top = tagEntries[0];  
     const sum = data.reduce((a,b)=>a+b,0) || 1;  
-    document.getElementById('topTag').textContent = top ? `#${top[0]}` : '—';  
-    document.getElementById('tagCount').textContent = String(labels.length);  
-    document.getElementById('topShare').textContent = top ? `${((top[1]/sum)*100).toFixed(1)}%` : '0%';  
+    topTag.textContent = top ? `#${top[0]}` : '—';  
+    tagCount.textContent = String(labels.length);  
+    topShare.textContent = top ? `${((top[1]/sum)*100).toFixed(1)}%` : '0%';  
 
     if (breakChart) breakChart.destroy();  
     const bctx = document.getElementById('breakChart').getContext('2d');  
     breakChart = new Chart(bctx, {  
       type:'doughnut',  
-      data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:'#0b1224', borderWidth:2, hoverOffset:10 }]},  
+      data:{ labels, datasets:[{ 
+        data, 
+        backgroundColor:colors, 
+        borderColor:'var(--bg)', 
+        borderWidth:4, 
+        hoverOffset:10 
+      }]},  
       options:{  
         cutout:'68%',  
         plugins:{  
@@ -1830,7 +2514,7 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
             position:'top',  
             align:'center',  
             labels:{  
-              color:'#e2e8f0',  
+              // color:'var(--text)', // REMOVED: Now uses global default
               usePointStyle:true,  
               pointStyle:'rect',  
               boxWidth:12,  
@@ -1860,6 +2544,9 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
       i===labels.length-1 ? 'rgba(34,197,94,1)' :  
       ['#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b','#ef4444','#22d3ee'][i%7]  
     );  
+    
+    // const gridColor = 'rgba(148, 163, 184, 0.2)'; // REMOVED: Use global default
+    // const tickColor = 'var(--muted)'; // REMOVED: Use global default
 
     earningsChart = new Chart(ectx, {  
       type:'bar',  
@@ -1870,8 +2557,7 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
           data:earnings,  
           backgroundColor: barColors,  
           borderColor:'#0ea5e9',  
-          borderWidth:1.2,  
-          hoverBackgroundColor: barColors  
+          borderWidth:0, // Removed frame
         }]  
       },  
       options:{  
@@ -1881,8 +2567,8 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
           tooltip:{callbacks:{label:(ctx)=>'$'+ctx.raw.toFixed(2)}}  
         },  
         scales:{  
-          x:{ticks:{color:'#e2e8f0'}},  
-          y:{ticks:{color:'#e2e8f0'}, beginAtZero:true}  
+          x:{/*ticks:{color:tickColor}, grid: { color: gridColor }*/},  
+          y:{/*ticks:{color:tickColor}, grid: { color: gridColor },*/ beginAtZero:true}  
         }  
       },  
       plugins:['glow']  
@@ -1911,21 +2597,21 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
           tooltip:{callbacks:{label:(ctx)=>`${ctx.raw.toFixed(2)} h`}}  
         },  
         scales:{  
-          x:{ticks:{color:'#e2e8f0'}},  
-          y:{ticks:{color:'#e2e8f0'}, beginAtZero:true}  
+          x:{/*ticks:{color:tickColor}, grid: { color: gridColor }*/},  
+          y:{/*ticks:{color:tickColor}, grid: { color: gridColor },*/ beginAtZero:true}  
         }  
       },  
       plugins:['glow']  
     });  
   }  
 
-  /* ===== Predictions (auto, tied to goals) ===== */  
+  /* ===== Predictions (NEW LOGIC) ===== */  
   function estimateDailyPace(){  
     const last7 = rangeDays(7);  
     let sum = 0;  
     let count = 0;  
     last7.forEach(d=>{  
-      const fx = sumEntriesBetween(d, d+86400000);  
+      const fx = sumEntriesBetween(d, d+dayMS);  
       if (fx.amount > 0){  
         sum += fx.amount;  
         count++;  
@@ -1933,56 +2619,118 @@ historyList.querySelectorAll('[data-edit]').forEach(btn=>{
     });  
     if (count > 0) return sum / count;  
     const rate = parseFloat(rateInput.value)||0;  
-    return rate * 8;  
-  } 
+    return rate * 8; // default to 8h/day if no history
+  }
+  
+  function getTrend(current, previous) {
+    if (previous > 0) {
+      const pct = ((current / previous) - 1) * 100;
+      const direction = pct >= 0 ? 'Up' : 'Down';
+      return `${direction} ${Math.abs(pct).toFixed(0)}%`;
+    }
+    if (current > 0) return 'Up 100%'; // From 0 to something
+    return '...'; // 0 to 0
+  }
+  
+  function getNextPayday(now, p1, p2) {
+    const d = new Date(now);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const currentDay = d.getDate();
 
-function updatePredRow(valueEl, goalEl, statusEl, value, goal){  
-    valueEl.textContent = fmtMoney(value);  
-    statusEl.classList.remove('good','bad','neutral');  
+    let p1ts = new Date(y, m, p1).getTime();
+    let p2ts = p2 > 0 ? new Date(y, m, p2).getTime() : 0;
+    
+    // Ensure p1 and p2 are sorted
+    if(p2 > 0 && p1ts > p2ts) [p1ts, p2ts] = [p2ts, p1ts];
 
-    if (goal > 0){  
-      goalEl.textContent = `Goal: ${fmtMoney(goal)}`;  
-      const pct = value / goal;  
-      const pctText = `${Math.round(pct*100)}% of goal`;  
-      if (pct >= 1){  
-        statusEl.classList.add('good');  
-        statusEl.textContent = `On track (${pctText})`;  
-      } else if (pct >= 0.8){  
-        statusEl.classList.add('neutral');  
-        statusEl.textContent = `Slightly behind (${pctText})`;  
-      } else {  
-        statusEl.classList.add('bad');  
-        statusEl.textContent = `Behind (${pctText})`;  
-      }  
-    } else {  
-      goalEl.textContent = `Goal: —`;  
-      statusEl.classList.add('neutral');  
-      statusEl.textContent = 'No goal set';  
-    }  
-  }  
+    if (currentDay <= p1) return p1ts;
+    if (p2 > 0 && currentDay <= p2) return p2ts;
+
+    // Next month's p1
+    return new Date(y, m + 1, p1).getTime();
+  }
+
+  function getPrevPayday(now, p1, p2) {
+    const d = new Date(now);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const currentDay = d.getDate();
+
+    let p1ts = new Date(y, m, p1).getTime();
+    let p2ts = p2 > 0 ? new Date(y, m, p2).getTime() : 0;
+    
+    if(p2 > 0 && p1ts > p2ts) [p1ts, p2ts] = [p2ts, p1ts];
+    
+    if (currentDay > p2 && p2 > 0) return p2ts;
+    if (currentDay > p1) return p1ts;
+
+    // Last month's p2 (or p1 if no p2)
+    if(p2 > 0) return new Date(y, m - 1, p2).getTime();
+    return new Date(y, m - 1, p1).getTime();
+  }
 
   function computePredictions(){  
     if (!predictionPanel) return;  
 
-    const dailyPace = estimateDailyPace();  
+    const now = Date.now();
+    const sWeek = startOfWeek(now);
+    const sMonth = startOfMonth(now);
+    const sYear = startOfYear(now);
+    const eYear = endOfYear(now);
+    
+    // Bi-weekly is "current" cycle. If we're in 2nd week, it starts last week.
+    const sBiWeek = (now - sWeek >= 7*dayMS) ? (sWeek - 7*dayMS) : sWeek;
 
-    const dailyPred   = dailyPace;  
-    const weeklyPred  = dailyPace * 7;  
-    const biWeeklyPred= dailyPace * 14;  
-    const monthlyPred = dailyPace * 30;  
-    const yearlyPred  = dailyPace * 365;  
+    // --- Current Period Totals ---
+    const weeklyPred  = sumRangeSince(sWeek, sWeek + 7*dayMS);
+    const biWeeklyPred= sumRangeSince(sBiWeek, sBiWeek + 14*dayMS);
+    const monthlyPred = sumRangeSince(sMonth, new Date(new Date(sMonth).getFullYear(), new Date(sMonth).getMonth()+1, 1).getTime());
+    const yearlyPred  = sumRangeSince(sYear, eYear);
+    
+    // --- Previous Period Totals ---
+    const prevWeekTotal = sumEntriesBetween(sWeek - 7*dayMS, sWeek).amount;
+    const prevBiWeekTotal = sumEntriesBetween(sBiWeek - 14*dayMS, sBiWeek).amount;
+    const prevMonthDate = new Date(sMonth);
+    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+    const prevMonthTotal = sumEntriesBetween(startOfMonth(prevMonthDate.getTime()), sMonth).amount;
+    const prevYearDate = new Date(sYear);
+    prevYearDate.setFullYear(prevYearDate.getFullYear() - 1);
+    const prevYearTotal = sumEntriesBetween(startOfYear(prevYearDate.getTime()), sYear).amount;
 
-    const dailyGoal   = goals.daily   || 0;  
-    const weeklyGoal  = goals.weekly  || 0;  
-    const biWeeklyGoal= goals.weekly ? goals.weekly*2 : (goals.monthly ? goals.monthly/2 : 0);  
-    const monthlyGoal = goals.monthly || 0;  
-    const yearlyGoal  = goals.yearly  || 0;  
+    // --- Update UI ---
+    predWeeklyValue.textContent = fmtMoney(weeklyPred);
+    predWeeklyDates.textContent = `${fmtDate(sWeek, true)} – ${fmtDate(sWeek + 6*dayMS, true)}`;
+    predWeeklyGoal.textContent = `Goal: ${fmtMoney(goals.weekly)}`;
+    predWeeklyPrev.textContent = `Previous Week: ${fmtMoney(prevWeekTotal)}`;
+    
+    predBiWeeklyValue.textContent = fmtMoney(biWeeklyPred);
+    predBiWeeklyDates.textContent = `${fmtDate(sBiWeek, true)} – ${fmtDate(sBiWeek + 13*dayMS, true)}`;
+    predBiWeeklyGoal.textContent = `Goal: ${fmtMoney(goals.weekly * 2)}`;
+    predBiWeeklyPrev.textContent = `Previous Period: ${fmtMoney(prevBiWeekTotal)}`;
 
-    updatePredRow(predDailyValue,   predDailyGoal,   predDailyStatus,   dailyPred,   dailyGoal);  
-    updatePredRow(predWeeklyValue,  predWeeklyGoal,  predWeeklyStatus,  weeklyPred,  weeklyGoal);  
-    updatePredRow(predBiWeeklyValue,predBiWeeklyGoal,predBiWeeklyStatus,biWeeklyPred,biWeeklyGoal);  
-    updatePredRow(predMonthlyValue, predMonthlyGoal, predMonthlyStatus, monthlyPred, monthlyGoal);  
-    updatePredRow(predYearlyValue,  predYearlyGoal,  predYearlyStatus,  yearlyPred,  yearlyGoal);  
+    predMonthlyValue.textContent = fmtMoney(monthlyPred);
+    predMonthlyDates.textContent = `${fmtDate(sMonth, true)} – ${fmtDate(new Date(new Date(sMonth).getFullYear(), new Date(sMonth).getMonth()+1, 0).getTime(), true)}`;
+    predMonthlyGoal.textContent = `Goal: ${fmtMoney(goals.monthly)}`;
+    predMonthlyPrev.textContent = `Previous Month: ${fmtMoney(prevMonthTotal)}`;
+
+    predYearlyValue.textContent = fmtMoney(yearlyPred);
+    predYearlyDates.textContent = `${fmtDate(sYear)} – ${fmtDate(eYear)}`;
+    predYearlyGoal.textContent = `Goal: ${fmtMoney(goals.yearly)}`;
+    predYearlyPrev.textContent = `Previous Year: ${fmtMoney(prevYearTotal)}`;
+    
+    // --- Payday ---
+    const p1 = prefs.payday1;
+    const p2 = prefs.payday2;
+    payday1Input.value = p1;
+    payday2Input.value = p2;
+
+    const prevPay = getPrevPayday(now, p1, p2);
+    const nextPay = getNextPayday(now, p1, p2);
+    const paydayPred = sumRangeSince(prevPay, nextPay);
+    
+    predPaydayValue.textContent = fmtMoney(paydayPred);
+    predPaydayDates.textContent = `${fmtDate(prevPay, true)} to ${fmtDate(nextPay, true)}`;
   }  
 
   function openPredictionPanel(){  
@@ -1999,6 +2747,17 @@ function updatePredRow(valueEl, goalEl, statusEl, value, goal){
   }  
 
   predictionClose.onclick = closePredictionPanel;  
+  payday1Input.addEventListener('change', () => { 
+    prefs.payday1 = Math.max(1, Math.min(31, +payday1Input.value || 1));
+    savePrefs();
+    computePredictions();
+  });
+  payday2Input.addEventListener('change', () => { 
+    prefs.payday2 = Math.max(1, Math.min(31, +payday2Input.value || 15));
+    savePrefs();
+    computePredictions();
+  });
+
 
   function openBillForecast(){  
     billForecastPanel.classList.add('show');  
@@ -2013,11 +2772,168 @@ function updatePredRow(valueEl, goalEl, statusEl, value, goal){
     syncOverlays();  
   }  
 
-billForecastClose.onclick = closeBillForecast;  
+  billForecastClose.onclick = closeBillForecast;  
 
-  exportClose.onclick = ()=>{  
-    exportBackdrop.classList.remove('show');  
-  };  
+  /* ===== Heatmap (NEW) ===== */
+  function openHeatmap() {
+    heatmapState.currentDate = new Date(); // Reset to current month
+    renderHeatmap();
+    heatmapPanel.classList.add('show');
+    heatmapPanel.setAttribute('aria-hidden', 'false');
+    syncOverlays();
+  }
+
+  function closeHeatmap() {
+    heatmapPanel.classList.remove('show');
+    heatmapPanel.setAttribute('aria-hidden', 'true');
+    syncOverlays();
+  }
+  
+  function renderHeatmap() {
+    heatmapGrid.innerHTML = ''; // Clear only the grid
+    
+    const navDate = heatmapState.currentDate;
+    const year = navDate.getFullYear();
+    const month = navDate.getMonth(); // 0-11
+    
+    heatmapMonthTitle.textContent = navDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    
+    // 1. Calculate daily totals
+    const dailyTotals = {};
+    for (const entry of history) {
+      const day = startOfDay(entry.endTs);
+      dailyTotals[day] = (dailyTotals[day] || 0) + entry.amount;
+    }
+    
+    const validAmounts = Object.values(dailyTotals).filter(a => a > 0);
+    
+    // 2. Find average (mean) for *all* worked days (e.g., last 90)
+    const ninetyDaysAgo = Date.now() - 90 * dayMS;
+    const recentValidAmounts = Object.entries(dailyTotals)
+      .filter(([ts, amt]) => ts >= ninetyDaysAgo && amt > 0)
+      .map(([ts, amt]) => amt);
+
+    let avg = 100; // Default average if no history
+    if (recentValidAmounts.length > 0) {
+      avg = recentValidAmounts.reduce((a,b) => a+b, 0) / recentValidAmounts.length;
+    }
+    const goodThreshold = avg * 1.5; // > 150% of avg
+    const badThreshold = avg * 0.5;  // < 50% of avg
+    
+    // 3. Render calendar for specified month
+    const firstDay = new Date(year, month, 1);
+    const firstDayOfWeek = firstDay.getDay(); // 0 = Sun
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Add spacers for the first week
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      heatmapGrid.appendChild(document.createElement('div')).className = 'heatmap-day spacer';
+    }
+    
+    // Loop through all days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      const day = document.createElement('div');
+      day.className = 'heatmap-day';
+      
+      const dayKey = new Date(year, month, i).getTime();
+      const amount = dailyTotals[dayKey];
+      
+      day.innerHTML = `<div>${i}</div>`;
+      
+      if (amount > 0) {
+        day.classList.add('has-data');
+        if (amount >= goodThreshold) {
+          day.classList.add('good');
+        } else if (amount <= badThreshold) {
+          day.classList.add('bad');
+        } else {
+          day.classList.add('neutral');
+        }
+        day.title = `${fmtDate(dayKey)}: ${fmtMoney(amount)}`;
+        day.innerHTML += `<div class="heatmap-day-amt">${fmtMoneyShort(amount)}</div>`;
+      } else {
+         day.title = `${fmtDate(dayKey)}: No earnings`;
+      }
+      
+      // Gray out days in the future
+      if (dayKey > Date.now()) {
+        day.classList.add('other-month');
+      }
+      
+      heatmapGrid.appendChild(day);
+    }
+  }
+
+  heatmapClose.onclick = closeHeatmap;
+  heatmapPrev.onclick = () => {
+    heatmapState.currentDate.setMonth(heatmapState.currentDate.getMonth() - 1);
+    renderHeatmap();
+  };
+  heatmapNext.onclick = () => {
+    heatmapState.currentDate.setMonth(heatmapState.currentDate.getMonth() + 1);
+    renderHeatmap();
+  };
+
+
+  /* ===== Export (NEW & FIXED) ===== */
+  function exportHistoryToCSV() {
+    const headers = "Start Time,End Time,Duration (HH:MM:SS),Amount,Tag";
+    const rows = history.map(h => {
+      const start = new Date(h.startTs).toLocaleString();
+      const end = new Date(h.endTs).toLocaleString();
+      const dur = formatMain(h.elapsedMs).split('.')[0]; // HH:MM:SS
+      const amt = h.amount.toFixed(2);
+      const tag = `"${(h.tag || '').replace(/"/g, '""')}"`; // Handle commas in tags
+      return [start, end, dur, amt, tag].join(',');
+    });
+    
+    const csvContent = [headers, ...rows].join("\n");
+    
+    // --- THIS IS THE FIX ---
+    // 1. Create a Blob (a file-like object) with the CSV data.
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // 2. Create a temporary URL for this Blob.
+    const url = URL.createObjectURL(blob);
+    
+    // 3. Create a virtual link, set its properties, and click it.
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "earnings-history.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    
+    // 4. Clean up the temporary URL
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+  
+  // NEW: Pro Alert Modal
+  function showProAlert() {
+    alertBackdrop.classList.add('show');
+    syncOverlays();
+  }
+  alertClose.onclick = () => {
+    alertBackdrop.classList.remove('show');
+    syncOverlays();
+  };
+
+  exportBtn.onclick = showProAlert; // Hook to new alert
+  exportCancel.onclick = () => {
+    exportBackdrop.classList.remove('show');
+    syncOverlays();
+  };
+  exportDownload.onclick = () => {
+    showProAlert(); // Hook to new alert
+    // const dataType = document.getElementById('exportDataType').value;
+    // if (dataType === 'history') {
+    //   exportHistoryToCSV(); // This is the function that is now disabled
+    // }
+    // exportBackdrop.classList.remove('show');
+    // syncOverlays();
+  };
+
 
   startBtn.onclick = startTimer;  
   stopBtn.onclick  = stopTimer;  
@@ -2033,13 +2949,16 @@ billForecastClose.onclick = closeBillForecast;
 
   menuBtn.onclick = ()=> toggleMenu();  
   closeMenu.onclick = ()=> toggleMenu(false);  
-
+  
+  menuDashboard.onclick   = showProAlert;
   menuGoals.onclick       = ()=>{ toggleMenu(false); openGoals(); syncOverlays(); };  
-  menuSummary.onclick     = ()=>{ alert('Summary: coming next.'); };  
-  menuCalc.onclick        = ()=>{ alert('Calculator: coming next.'); };  
+  menuSummary.onclick     = showProAlert;
+  menuCalc.onclick        = ()=>{ toggleMenu(false); openCalc(); };  
   menuExpenses.onclick    = ()=>{ toggleMenu(false); openExpenses(); syncOverlays(); };  
   menuPrediction.onclick  = ()=>{ toggleMenu(false); openPredictionPanel(); };  
   menuBillForecast.onclick= ()=>{ toggleMenu(false); openBillForecast(); };  
+  menuHeatmap.onclick     = ()=>{ toggleMenu(false); openHeatmap(); }; // NEW
+  menuWorkMap.onclick     = showProAlert; // NEW
 
   goalsClose.onclick = ()=> { closeGoals(); syncOverlays(); };  
 
@@ -2182,8 +3101,6 @@ billForecastClose.onclick = closeBillForecast;
     syncOverlays();  
   };  
 
-  /* ===== Expenses (continues in PART 3) ===== */
-  <!-- PART 3 (continuation of <script> from Part 2) -->
   stopAtBtn.onclick = ()=>{  
     stopAtInput.value = toLocalInput(Date.now());  
     stopAtBackdrop.classList.add('show');  
@@ -2261,8 +3178,8 @@ billForecastClose.onclick = closeBillForecast;
     playSound(900, 80);  
   };  
 
-  [startAtBackdrop, stopAtBackdrop, exportBackdrop, confirmBackdrop, editBackdrop, saveBackdrop].forEach(el=>{  
-    el.addEventListener('click', (e)=>{  
+  [alertBackdrop, startAtBackdrop, stopAtBackdrop, exportBackdrop, confirmBackdrop, editBackdrop, saveBackdrop].forEach(el=>{  
+    if(el) el.addEventListener('click', (e)=>{  
       if (e.target===el){  
         el.classList.remove('show');  
         syncOverlays();  
@@ -2271,6 +3188,7 @@ billForecastClose.onclick = closeBillForecast;
   });  
 
   /* ===== Inbox + overlay gating ===== */  
+
   function anyOverlayOpen(){  
     return (  
       menuPanel.classList.contains('show') ||  
@@ -2287,7 +3205,10 @@ billForecastClose.onclick = closeBillForecast;
       expensesPanel.classList.contains('show') ||  
       inboxPanel.classList.contains('show') ||  
       predictionPanel.classList.contains('show') ||  
-      billForecastPanel.classList.contains('show')  
+      billForecastPanel.classList.contains('show') ||
+      heatmapPanel.classList.contains('show') || // NEW
+      calcPanel.classList.contains('show') ||
+      alertBackdrop.classList.contains('show') // NEW
     );  
   }  
 
@@ -2296,8 +3217,9 @@ billForecastClose.onclick = closeBillForecast;
   }  
 
   function refreshInboxBtnVisibility(){  
-    inboxBtn.style.display = isMainScreen() ? 'inline-flex' : 'none';  
-    inboxBtn.setAttribute('aria-expanded', inboxPanel.classList.contains('show') ? 'true' : 'false');  
+    if(inboxBtn) inboxBtn.style.display = isMainScreen() ? 'inline-flex' : 'none';  
+    if(plusBtn) plusBtn.style.display = isMainScreen() ? 'inline-flex' : 'none'; 
+    if(inboxBtn) inboxBtn.setAttribute('aria-expanded', inboxPanel.classList.contains('show') ? 'true' : 'false');  
   }  
 
   function openInbox(){  
@@ -2305,6 +3227,13 @@ billForecastClose.onclick = closeBillForecast;
     inboxPanel.classList.add('show');  
     inboxPanel.setAttribute('aria-hidden','false');  
     inboxBtn.setAttribute('aria-expanded','true');  
+    
+    // Mark update as seen and remove dot
+    inboxBtn.classList.remove('has-new-message');
+    try {
+      localStorage.setItem(STORE_KEY_UPDATE_SEEN, 'true');
+    } catch(e) {}
+    
     syncOverlays();  
   }  
 
@@ -2315,11 +3244,13 @@ billForecastClose.onclick = closeBillForecast;
     syncOverlays();  
   }  
 
-  inboxBtn.onclick = ()=>{  
+  if(inboxBtn) inboxBtn.onclick = ()=>{  
     if (isMainScreen()) openInbox();  
   };  
+  
+  if(plusBtn) plusBtn.onclick = showProAlert;
 
-  closeInbox.onclick = closeInboxPanel;  
+  if(closeInbox) closeInbox.onclick = closeInboxPanel;  
 
   function observeOverlay(el){  
     if (!el) return;  
@@ -2330,18 +3261,19 @@ billForecastClose.onclick = closeBillForecast;
 
   [menuPanel, historyPanel, goalsPanel, statsBackdrop, settingsBackdrop,  
    saveBackdrop, editBackdrop, confirmBackdrop, startAtBackdrop, stopAtBackdrop,  
-   exportBackdrop, expensesPanel, inboxPanel, predictionPanel, billForecastPanel]  
+   exportBackdrop, expensesPanel, inboxPanel, predictionPanel, billForecastPanel,
+   calcPanel, heatmapPanel, alertBackdrop] // NEW
    .forEach(observeOverlay);  
 
   function syncOverlays(){  
     const open = anyOverlayOpen();  
-    blocker.style.display = open ? 'block' : 'none';  
+    if(blocker) blocker.style.display = open ? 'block' : 'none';  
     const histOpen = historyPanel.classList.contains('show');  
     setMainButtonsVisible(!histOpen);  
     refreshInboxBtnVisibility();  
   }  
 
-  blocker.addEventListener('click', (e)=>{  
+  if(blocker) blocker.addEventListener('click', (e)=>{  
     e.stopPropagation();  
   });  
 
@@ -2586,14 +3518,14 @@ billForecastClose.onclick = closeBillForecast;
             '#22c55e','#2dd4bf','#60a5fa','#a78bfa','#f59e0b',  
             '#ef4444','#22d3ee','#10b981','#f472b6','#94a3b8','#eab308'  
           ],  
-          borderColor:'#0b1224',  
+          borderColor:'var(--bg)',  
           borderWidth:2  
         }]  
       },  
       options:{  
         cutout:'60%',  
         plugins:{  
-          legend:{labels:{color:'#e2e8f0'}}  
+          legend:{labels:{color:'var(--text)'}}  
         }  
       }  
     });  
@@ -2606,6 +3538,10 @@ billForecastClose.onclick = closeBillForecast;
     const g = tctx.createLinearGradient(0, area.top, 0, area.bottom);  
     g.addColorStop(0,'rgba(239,68,68,0.35)');  
     g.addColorStop(1,'rgba(239,68,68,0.05)');  
+    
+    // const gridColor = 'rgba(148, 163, 184, 0.2)'; // REMOVED: Use global default
+    // const tickColor = 'var(--muted)'; // REMOVED: Use global default
+    
     xpTrend = new Chart(tctx, {  
       type:'line',  
       data:{  
@@ -2627,8 +3563,8 @@ billForecastClose.onclick = closeBillForecast;
           tooltip:{callbacks:{label:(ctx)=>fmtMoney(ctx.raw)}}  
         },  
         scales:{  
-          x:{ticks:{color:'#e2e8f0'}},  
-          y:{ticks:{color:'#e2e8f0'}, beginAtZero:true}  
+          x:{/*ticks:{color:tickColor}, grid: { color: gridColor } */},  
+          y:{/*ticks:{color:tickColor}, grid: { color: gridColor },*/ beginAtZero:true}  
         }  
       },  
       plugins:['glow']  
@@ -2654,8 +3590,7 @@ billForecastClose.onclick = closeBillForecast;
       const li=document.createElement('li');  
       li.textContent=s;  
       xpSuggestions.appendChild(li);  
-    };  
-
+    };
     const top = catEntries[0];  
     if (top){  
       const share = (top[1]/Math.max(1,total)*100).toFixed(1);  
@@ -2683,15 +3618,8 @@ billForecastClose.onclick = closeBillForecast;
       add(`Dining/nightlife (${fmtMoney(rest+bars)}) is rivaling groceries (${fmtMoney(groc)}). Try 1–2 cook-at-home days.`);  
     }  
 
-    const thisWeekStart = (()=>{  
-      const d = new Date();  
-      const x=new Date(d.getFullYear(), d.getMonth(), d.getDate());  
-      const dow=x.getDay();  
-      x.setDate(x.getDate()-dow);  
-      x.setHours(0,0,0,0);  
-      return +x;  
-    })();  
-    const lastWeekStart = thisWeekStart - 7*86400000;  
+    const thisWeekStart = startOfWeek(Date.now());
+    const lastWeekStart = thisWeekStart - 7*dayMS;  
     const thisWeek = expenses.filter(e=>e.ts>=thisWeekStart).reduce((a,b)=>a+b.amount,0);  
     const lastWeek = expenses.filter(e=>e.ts>=lastWeekStart && e.ts<thisWeekStart).reduce((a,b)=>a+b.amount,0);  
     if (lastWeek>0 && thisWeek > lastWeek*1.3 && thisWeek - lastWeek > 50){  
@@ -2746,6 +3674,8 @@ billForecastClose.onclick = closeBillForecast;
     bfIncome.textContent = fmtMoney(income);  
     bfBills.textContent  = fmtMoney(totalBills);  
     bfLeft.textContent   = fmtMoney(left);  
+    bfLeft.classList.toggle('good', left >= 0);
+    bfLeft.classList.toggle('bad', left < 0);
 
     bfHints.innerHTML = '';  
     const addHint = txt => {  
@@ -2831,8 +3761,13 @@ billForecastClose.onclick = closeBillForecast;
 
       if (running && startWallTs){  
         const now = Date.now();  
+        const lastSaved = s.lastSaved || now;
+        const elapsedSince = now - lastSaved;
+        
+        // Recalculate elapsed based on wall clock, not saved state
         elapsed = Math.max(0, now - startWallTs);  
         startTime = now - elapsed;  
+        
         update();  
         startInterval();  
       }else{  
@@ -2842,8 +3777,23 @@ billForecastClose.onclick = closeBillForecast;
   }  
 
   /* ===== Boot ===== */  
+  
+  // Run intro animation
+  setTimeout(() => {
+    if (introOverlay) introOverlay.classList.add('hide');
+  }, 2000);
+  
   loadPrefs();  
-  applyTheme();  
+  applyTheme(); // This will now also call updateChartDefaults()
+  updateChartDefaults(); // Call it once on load
+  
+  // Check for Update Notification
+  try {
+    const seenUpdate = localStorage.getItem(STORE_KEY_UPDATE_SEEN);
+    if (seenUpdate !== 'true') {
+      inboxBtn.classList.add('has-new-message');
+    }
+  } catch(e) {}
 
   loadGoals();  
   loadHistoryStore();  
@@ -2853,9 +3803,13 @@ billForecastClose.onclick = closeBillForecast;
   loadBudgets();  
   loadExpenses();  
   loadState();  
-  computePredictions();  
+  computePredictions(); 
   updateBillForecast();  
   syncOverlays();  
+  
+  // Set default rate on calc
+  calcRate1.value = rateInput.value;
+  calcRate2.value = rateInput.value;
 
   window.addEventListener('beforeunload', ()=>{  
     saveState();  
@@ -2875,11 +3829,20 @@ billForecastClose.onclick = closeBillForecast;
     }  
   });  
 
+  // Main update loop
   setInterval(()=>{  
-    update();  
+    if(!document.hidden) {
+      update();
+    }
   }, 1000/60);  
+  
+  // Refresh predictions (and thus, trends) every 10 seconds
+  setInterval(()=>{  
+    if(isMainScreen() && !running) {
+       computePredictions();
+    }
+  }, 10000);
 </script>  
 
 </body>  
 </html>
-
